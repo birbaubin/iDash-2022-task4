@@ -1,13 +1,14 @@
 import time
 import pandas as pd
 from bloom_filter import BloomFilter
+from numpy import array,zeros
 
 
 tic_A = time.perf_counter()
 
 dataset_A = pd.read_csv("dataA_hash_hs.csv")
 dataset_A = dataset_A.reset_index()
-bloom_filter = BloomFilter(max_elements=170000, error_rate=0.0001)
+bloom_filter = BloomFilter(max_elements=2000000, error_rate=0.000001)
 
 for index, row in dataset_A.iterrows():
     if not pd.isnull(row["SSN"]):
@@ -28,13 +29,32 @@ for index, row in dataset_B.iterrows():
         try:
             assert row["SSN"] not in bloom_filter
         except AssertionError:
-            print(row["SSN"], "is in DB A" )
             ids = ids + 1
 
 print("Number of identified elements ", ids)
 
 toc_B = time.perf_counter()
 print("B took : ", toc_B-tic_B, "s")
-#%%
+tic_C = time.perf_counter()
+fName = []
+lName = []
+bDay = []
+mail = []
+phone = []
+address = []
+state = []
 
-#%%
+dataset_A = dataset_A.reset_index()
+for index, row in dataset_A.iterrows():
+     fName.append(row["First Name"]);
+     lName.append(row["Last Name"]);
+     bDay.append(row["Birth Date"]);
+     mail.append(row["Email"]);
+     phone.append(row["Phone"]);
+     address.append(row["Address"]);
+     state.append(row["State"]);
+
+toc_C = time.perf_counter()
+
+print("Lecture d'un dataset")
+print("C took : ", toc_C-tic_C, "s")
