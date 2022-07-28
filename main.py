@@ -214,4 +214,4 @@ for i in range(0, 7, 1): #5-uplets
                     C = {'idA': idA, 'idB': idB}
                     donnees = pd.DataFrame(C, columns=['idA', 'idB'])
                     export_csv = pd.dt.to_csv(str(i)+str(j)+str(a)+str(b)+str(c)+'linked.csv', index=None, header=True, encoding='utf-8', sep=';')
-                    print(donnees)
+                    print(donnees) 
