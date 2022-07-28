@@ -39,88 +39,42 @@ toc_B = time.perf_counter()
 print("B took : ", toc_B-tic_B, "s")
 """
 
+registre = ["First Name","Last Name","Birth Date","Email","Phone","Address","State"]
 
-tic_C = time.perf_counter()
-fNameA = []
-lNameA = []
-bDayA = []
-mailA = []
-phoneA = []
-addressA = []
-stateA = []
-
-dataset_A = dataset_A.reset_index()
-for index, row in dataset_A.iterrows():
-     fNameA.append(row["First Name"]);
-     lNameA.append(row["Last Name"]);
-     bDayA.append(row["Birth Date"]);
-     mailA.append(row["Email"]);
-     phoneA.append(row["Phone"]);
-     addressA.append(row["Address"]);
-     stateA.append(row["State"]);
-
-fNameB = []
-lNameB = []
-bDayB = []
-mailB = []
-phoneB = []
-addressB = []
-stateB = []
-
-dataset_B = dataset_B.reset_index()
-for index, row in dataset_B.iterrows():
-    fNameB.append(row["First Name"]);
-    lNameB.append(row["Last Name"]);
-    bDayB.append(row["Birth Date"]);
-    mailB.append(row["Email"]);
-    phoneB.append(row["Phone"]);
-    addressB.append(row["Address"]);
-    stateB.append(row["State"]);
-
-toc_C = time.perf_counter()
-
-print("Lecture des deux datasets")
-print("C took : ", toc_C-tic_C, "s")
-
-
-registreA = [fNameA,lNameA,bDayA,mailA,phoneA,addressA,stateA]
-registreB = [fNameB,lNameB,bDayB,mailB,phoneB,addressB,stateB]
 print("Registres créés")
 for i in range(0,7,1):
     for j in range(i+1,7,1):
         print("i=",i,"j=",j)
+        dataset_A = dataset_A.reset_index()
+        dataset_B = dataset_B.reset_index()
         compteur = 0
         lNum = 0
         upletA = []
         upletB = []
-        for k in range(len(fNameA)):
-            if registreA[i][k] == "" or registreA[j][k] == "":
+        idA = []
+        idB = []
+        for index, row in dataset_A.iterrows():
+            if pd.isnull(row[registre[i]]) or pd.isnull(row[registre[j]]):
                 upletA.append("")
             else:
-                upletA.append(registreA[i][k]+registreA[j][k]) #hasher directement ici
+                upletA.append(row[registre[i]]+row[registre[j]]) #hasher directement ici
         print("upletA créé")
-        for k in range(len(fNameA)):
-            if registreB[i][k] == "" or registreB[j][k] == "":
+        for index, row in dataset_B.iterrows():
+            if pd.isnull(row[registre[i]]) or pd.isnull(row[registre[j]]):
                 upletB.append("")
             else:
-             upletB.append(registreB[i][k]+registreB[j][k]) #hasher directement ici
+             upletB.append(row[registre[i]]+row[registre[j]]) #hasher directement ici
         print("upletB créé")
-        for k in upletA:
-            if not k == "":
-                for l in upletB: #traiter le cas du k et l vides et le faire dès leur selection
-                    if k == l:
-                        compteur+=1 #plutot que juste faire un compteur, faire la liste # des ids
+        for k in range(len(upletA)):
+            if not upletA[k] == "":
+                for l in range(len(upletB)):
+                    if upletA[k] == upletA[l]:
+                        idA.append(k)
+                        idB.append(l)
             lNum+=1
             print(lNum)
-        print("nombre d'occurences communes =",compteur, "pour i, j =",i,j)
-
-
-
-
-
-
-
-
-
-
+        C={'idA':idA,'idB':idB}
+        donnees = pd.DataFrame(C,columns=['idA','idB'])
+        export_csv = pd.dt.to_csv(str(i)+str(j)+'linked.csv', index = None, header=True, encoding='utf-8', sep=';')
+        print(donnees)
 
