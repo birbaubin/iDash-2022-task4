@@ -92,26 +92,6 @@ def creatingTuple3(registre, tuple):
             uplet.append((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),beta,p))).encode('utf-8')) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
     return(uplet)
 
-def creatingTupleMissing2(registre, tuple,missingCount):
-
-    uplet = []  # The creation of the the tuple array
-    for k in range(len(registre[0])):
-        if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
-            uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked or with less than missingCount missing values
-        else:
-            uplet.append((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16),beta,p))).encode('utf-8')) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
-    return(uplet)
-
-def creatingTupleMissing3(registre, tuple,missingCount):
-
-    uplet = []  # The creation of the the tuple array
-    for k in range(len(registre[0])):
-        if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
-            uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked
-        else:
-            uplet.append((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] + registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),beta,p))).encode('utf-8'))  # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
-    return(uplet)
-
 def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
     indexA = numpy.argsort(upletA) #Sorting the hashes while keeping in memory the ID of the hashes
     upletA = numpy.sort(upletA)
@@ -132,12 +112,17 @@ def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
                 l += 1
     return
 
-def createTupleBp1(dataset_B):
-    #get the tuples from A
+def linkage(dataset_B):
+    #get the tuple from A
+    tupleListA = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreB = extratingData(dataset_B)
 
     list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
+
+    idB = [] # The list that will save the ID of linked elements of B
+
+    BooleanA = registreB[8]
 
     for f in range(len(list)):
 
@@ -147,39 +132,30 @@ def createTupleBp1(dataset_B):
             upletB = creatingTuple3(registreB,list[f],p)
         #send upletB to A
 
-    list = np.array([[2,7],[5,7],[0,1,7],[0,4,7],[0,5,7],[1,4,7],[1,5,7]])
-    missing = [4,4,4,3,3,3,3]
 
-    for f in range(len(list)):
-        if len(list[f]) ==2:
-            upletB = creatingTupleMissing2(registreB,list[f],missing[f])
-        else:
-            upletB = creatingTupleMissing3(registreB,list[f],missing[f])
-        #send upletB to A
+        invBeta = pow(beta, -1,q)
 
-def createTupleBp2(tupleListA):
-    invBeta = pow(beta, -1,q)
-    #get the tuples from A
-    tupleListB = []
+        #get the tupleB from A
+        tupleListB = []
 
-    idA = []  # The two list that will save the ID of linked elements
-    idB = []
+        idA = []  # The list that will save the ID of new linked elements of A
 
-    BooleanA = []
 
-    for i in range(len(tupleListB[0])):
-        BooleanA.append(False)
+        for i in range(len(tupleListB)):
+            for j in range(len(tupleListB[0])):
+                tupleListB[i][j]=pow(tupleListB[i][j],invBeta,p)
 
-    BooleanB = BooleanA
+        for i in range(len(tupleListB)):
+            compareTuple((tupleListA,tupleListB,idA,idB,BooleanA,registreB[8]))
 
-    for i in range(len(tupleListB)):
-        for j in range(len(tupleListB[0])):
-            tupleListB[i][j]=pow(tupleListB[i][j],invBeta,p)
+        #send idA to A
 
-    for i in range(len(tupleListB)):
-        compareTuple((tupleListA,tupleListB,idA,idB,BooleanA,BooleanB))
+    C = {'Value': registreB[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset B. True means linked, False the opposite
+    donnees = pd.DataFrame(C, columns=['Value'])
+    donnees.to_csv('OutputB.csv', index=False, header=True, encoding='utf-8', sep=';')
 
-    #send outputA, linkage to A
+
+
 
 
 

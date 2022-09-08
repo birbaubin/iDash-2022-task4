@@ -84,27 +84,6 @@ def creatingTuple3(registre, tuple,p):
             uplet.append(hashlib.sha256((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),alpha,p))).encode('utf-8')).hexdigest()) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
     return(uplet)
 
-def creatingTupleMissing2(registre, tuple,missingCount, p):
-
-    uplet = []  # The creation of the the tuple array
-    for k in range(len(registre[0])):
-        if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
-            uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked or with less than missingCount missing values
-        else:
-            uplet.append(hashlib.sha256((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16),alpha,p))).encode('utf-8')).hexdigest()) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
-    return(uplet)
-
-def creatingTupleMissing3(registre, tuple,missingCount, p):
-
-    uplet = []  # The creation of the the tuple array
-    for k in range(len(registre[0])):
-        if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
-            uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked
-        else:
-            uplet.append(hashlib.sha256((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] + registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),alpha,p))).encode('utf-8')).hexdigest())  # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
-    return(uplet)
-
-
 #get p,q from B
 p=0
 q=0
@@ -123,22 +102,22 @@ def createTupleA(dataset_A,p):
             upletA = creatingTuple3(registreA,list[f],p)
         #send upletA to B
 
-    list = np.array([[2,7],[5,7],[0,1,7],[0,4,7],[0,5,7],[1,4,7],[1,5,7]])
-    missing = [4,4,4,3,3,3,3]
+        #get tuple from B (H(x)^beta)
+        tuple = []
+        for i in range(len(tuple)):
+            tuple[i] = pow(tuple[i],alpha,p)
+        #send tuple to B
+        #get idA from B
+        idA = []
+        for i in range(len(idA)):
+            registreA[idA[i]] = True
 
-    for f in range(len(list)):
-        if len(list[f]) ==2:
-            upletA = creatingTupleMissing2(registreA,list[f],missing[f])
-        else:
-            upletA = creatingTupleMissing3(registreA,list[f],missing[f])
-        #send upletA to B
+    C = {'Value': registreA[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset A. True means linked, False the opposite
+    donnees = pd.DataFrame(C, columns=['Value'])
+    donnees.to_csv('OutputA.csv', index=False, header=True, encoding='utf-8', sep=';')
 
-def transformTupleB(p):
-    #get tuple from B (H(x)^beta)
-    tuple = []
-    for i in range(len(tuple)):
-        tuple[i] = pow(tuple[i],alpha,p)
-    #send tuple to B
+
+
 
 
 
