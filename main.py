@@ -1,19 +1,31 @@
 import math
 import time
-
 import numpy as np
 import pandas as pd
-from bloom_filter import BloomFilter
 import hashlib
 import numpy
+import secrets
+import sympy
+
+
 
 # tic_A = time.perf_counter()
 
 dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
 dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
-linked = pd.read_csv("linkage.csv", sep=';')
+#linked = pd.read_csv("linkage.csv", sep=';')
 
+size_q =60 #choose the security value
+alpha = (secrets.randbits(50)+1)*2 #choose the security value
+
+def param(size_q):
+    q = sympy.nextprime(pow(2, size_q)+secrets.randbits(size_q))
+    p = 2*q+1
+    while sympy.isprime(p)==False:
+        q = sympy.nextprime(q)
+        p = 2*q+1
+    return p,q
 
 def extratingData(dataset):
     fName = []  # first name of Dataset
@@ -104,7 +116,7 @@ def creatingTupleMissing3(registre, tuple,missingCount):
             uplet.append(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] + registre[tuple[2]][k]).encode('utf-8')).hexdigest())  # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
     return(uplet)
 
-def compareUplet(upletA, upletB, idA, idB, registreA, registreB):
+def compareTuple(upletA, upletB, idA, idB, registreA, registreB):
     indexA = numpy.argsort(upletA) #Sorting the hashes while keeping in memory the ID of the hashes
     upletA = numpy.sort(upletA)
     indexB = numpy.argsort(upletB) #Sorting the hashes while keeping in memory the ID of the hashes
@@ -123,7 +135,6 @@ def compareUplet(upletA, upletB, idA, idB, registreA, registreB):
                 registreB[8][indexB[l]] = True
                 l += 1
     return
-
 
 
 def linkage(dataset_A, dataset_B):
@@ -146,7 +157,7 @@ def linkage(dataset_A, dataset_B):
             upletA = creatingTuple3(registreA,list[f])
             upletB = creatingTuple3(registreB,list[f])
 
-        compareUplet(upletA, upletB, idA, idB, registreA, registreB)
+        compareTuple(upletA, upletB, idA, idB, registreA, registreB)
 
     list = np.array([[2,7],[5,7],[0,1,7],[0,4,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3,3]
@@ -159,7 +170,7 @@ def linkage(dataset_A, dataset_B):
             upletA = creatingTupleMissing3(registreA,list[f],missing[f])
             upletB = creatingTupleMissing3(registreB,list[f],missing[f])
 
-        compareUplet(upletA, upletB, idA, idB, registreA, registreB)
+        compareTuple(upletA, upletB, idA, idB, registreA, registreB)
 
 
     """
@@ -186,10 +197,7 @@ def linkage(dataset_A, dataset_B):
     print("export 3/3 fait")
     print(-tic_A + time.perf_counter())  # Output of the execution time
 
-
 linkage(dataset_A, dataset_B)
-
-
 
 def missingTest(dataset_A, dataset_B, linked):
     fNameA = []  # first name of Dataset A
