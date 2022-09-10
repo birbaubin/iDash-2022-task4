@@ -1,4 +1,6 @@
+import json
 import math
+import socket
 import time
 import numpy as np
 import pandas as pd
@@ -11,7 +13,40 @@ dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
 
 alpha = (secrets.randbits(50)+1)*2 #choose the security value
+s = socket.socket()         # Create a socket object
+host = socket.gethostname() # Get local machine name
+port = 12345
+s.connect((host, port))
 
+def receiveParams():
+    result = s.recv(1024)
+    json_data = json.loads(result.decode())
+    p = json_data.get("p")
+    q = json_data.get("q")
+    print("Parameters received : p=", p, " q=", q)
+    return p, q
+
+p, q = receiveParams()
+
+def receiveUplet():
+    uplet = []
+    for i in range(5000):
+        # print(i)
+        result = s.recv(1048576)
+        # print(result)
+        json_data = json.loads(result.decode())
+        uplet = uplet + json_data.get(str(i))
+
+    return uplet
+
+def sendUplet(uplet):
+    for i in range(5000):
+        #send upletA to B
+        # print(upletA)
+        json_data = json.dumps({str(i): uplet[i*100:i*100+100]})
+        # print(json_data.encode())
+        s.sendall(json_data.encode())
+        time.sleep(0.005)
 
 
 def extratingData(dataset):
@@ -84,9 +119,8 @@ def creatingTuple3(registre, tuple,p):
             uplet.append(hashlib.sha256((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),alpha,p))).encode('utf-8')).hexdigest()) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
     return(uplet)
 
-#get p,q from B
-p=0
-q=0
+
+
 
 def createTupleA(dataset_A,p):
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
@@ -96,19 +130,41 @@ def createTupleA(dataset_A,p):
 
     for f in range(len(list)):
 
+        print("######### Tuple number ", f + 1, "###########")
+
         if len(list[f]) == 2:
             upletA = creatingTuple2(registreA,list[f],p)
         else:
             upletA = creatingTuple3(registreA,list[f],p)
-        #send upletA to B
+
+        # print(upletA)
+        # json_data = json.dumps({str(f): upletA[:10000]})
+        # # print(json_data.encode())
+        # s.sendall(json_data.encode())
+
+        sendUplet(upletA)
+        print("1/4 : H(x)^alpha sent ")
+
 
         #get tuple from B (H(x)^beta)
-        tuple = []
+        tuple = receiveUplet()
+        # print(tuple)
+        print("2/4 : H(y)^beta received ")
+
         for i in range(len(tuple)):
-            tuple[i] = pow(tuple[i],alpha,p)
+            if tuple[i] != "":
+                tuple[i] = pow(int(tuple[i]),alpha,p)
+
         #send tuple to B
+        sendUplet(tuple)
+        print("3/4 : H(y)^(beta*alpha) sent ")
+
         #get idA from B
-        idA = []
+        idA  = receiveUplet()
+        print("4/4 : IdA received")
+
+        print(idA)
+
         for i in range(len(idA)):
             registreA[idA[i]] = True
 
@@ -116,7 +172,9 @@ def createTupleA(dataset_A,p):
     donnees = pd.DataFrame(C, columns=['Value'])
     donnees.to_csv('OutputA.csv', index=False, header=True, encoding='utf-8', sep=';')
 
+    s.close()
 
+createTupleA(dataset_A, p)
 
 
 
