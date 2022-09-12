@@ -1,5 +1,4 @@
 import json
-import math
 import time
 import numpy as np
 import pandas as pd
@@ -13,10 +12,10 @@ import socket
 start = time.perf_counter()
 dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
-size_q =128 #choose the security value
+size_q =60 #choose the security value
 beta = (secrets.randbits(50)+1)*2 #choose the security value
 sock = socket.socket()
-host = socket.gethostname()
+host = socket.gethostbyname("")
 port = 12345
 sock.bind((host, port))
 sock.listen(5)
@@ -45,11 +44,10 @@ sendParams(p, q)
 def receiveUplet():
     uplet = []
     for i in range(5000):
-        # print(i)
         result = c.recv(1048576)
-        # print(result)
         json_data = json.loads(result.decode())
         uplet = uplet + json_data.get(str(i))
+        c.sendall(b'ok')
 
     return uplet
 
@@ -60,7 +58,7 @@ def sendUplet(uplet):
         json_data = json.dumps({str(i): uplet[i*100:i*100+100]})
         # print(json_data.encode())
         c.sendall(json_data.encode())
-        time.sleep(0.005)
+        ok = c.recv(16)
 
 
 def sendIdA(idA):
@@ -227,30 +225,23 @@ def linkage(dataset_B):
         #get the tupleB from A
 
         tupleListB = receiveUplet()
+
         print(time.perf_counter() - start, " : 3/4 : H(y)^(beta*apha) received ")
 
         idA = []  # The list that will save the ID of new linked elements of A
-
-
-        # for i in range(len(tupleListB)):
-        #     for j in range(len(tupleListB[0])):
-        #         tupleListB[i][j]=pow(tupleListB[i][j],invBeta,p)
 
         for i in range(len(tupleListB)):
             if tupleListB[i] != "":
                 tupleListB[i] = hashlib.sha256(str(pow(int(tupleListB[i]),invBeta,p)).encode('utf-8')).hexdigest()
 
-
-
         # for i in range(len(tupleListB)):
         compareTuple(tupleListA,tupleListB,idA,idB,BooleanA,registreB[8])
-
-        print("Number of linked records for this tuple : ", len(idA))
 
         #send idA to A
         # sendUplet(idA)
         sendIdA(idA)
         print(time.perf_counter() - start, " : 4/4 : idA sent ")
+        print("Number of linked records for this tuple : ", len(idA))
 
     C = {'Value': registreB[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset B. True means linked, False the opposite
     donnees = pd.DataFrame(C, columns=['Value'])

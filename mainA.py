@@ -15,7 +15,7 @@ empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # Th
 
 alpha = (secrets.randbits(50)+1)*2 #choose the security value
 s = socket.socket()         # Create a socket object
-host = socket.gethostname() # Get local machine name
+host = socket.gethostbyname("") # Get local machine name
 port = 12345
 s.connect((host, port))
 
@@ -37,6 +37,8 @@ def receiveUplet():
         # print(result)
         json_data = json.loads(result.decode())
         uplet = uplet + json_data.get(str(i))
+        s.sendall(b'ok')
+
 
     return uplet
 
@@ -47,7 +49,7 @@ def sendUplet(uplet):
         json_data = json.dumps({str(i): uplet[i*100:i*100+100]})
         # print(json_data.encode())
         s.sendall(json_data.encode())
-        time.sleep(0.005)
+        ok = s.recv(16)
 
 
 def receiveIdA():
@@ -177,7 +179,7 @@ def createTupleA(dataset_A,p):
 
         #get tuple from B (H(x)^beta)
         tuple = receiveUplet()
-        # print(tuple)
+
         print(time.perf_counter() - start, " : 2/4 : H(y)^beta received ")
 
         for i in range(len(tuple)):
