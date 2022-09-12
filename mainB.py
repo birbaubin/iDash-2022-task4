@@ -9,9 +9,11 @@ import secrets
 import sympy
 import socket
 
+
+start = time.perf_counter()
 dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
-size_q =60 #choose the security value
+size_q =128 #choose the security value
 beta = (secrets.randbits(50)+1)*2 #choose the security value
 sock = socket.socket()
 host = socket.gethostname()
@@ -59,6 +61,41 @@ def sendUplet(uplet):
         # print(json_data.encode())
         c.sendall(json_data.encode())
         time.sleep(0.005)
+
+
+def sendIdA(idA):
+
+    end = False
+    i = 0
+    newIdA = []
+    for id in idA:
+        newIdA.append(str(id))
+
+    while not end:
+        time.sleep(0.005)
+
+        if i*1000+1000 >= len(idA):
+            # print("end")
+            end = True
+            json_data = json.dumps({str(i): newIdA[i*1000:len(newIdA)]})
+            c.sendall(json_data.encode())
+        else:
+            json_data = json.dumps({str(i): newIdA[i*1000:i*1000+1000]})
+            c.sendall(json_data.encode())
+        # except Exception:
+        #     print("exception")
+        #     json_data = json.dumps({str(i): newIdA[i*1000:len(newIdA)]})
+        #     c.sendall(json_data.encode())
+        #     c.sendall(json.dumps({str(i+1): "end"}).encode())
+        #     end = True
+
+        i+=1
+
+    time.sleep(0.005)
+    json_data = json.dumps({str(i): "end"})
+    c.sendall(json_data.encode())
+
+
 
 
 def extratingData(dataset):
@@ -171,7 +208,7 @@ def linkage(dataset_B):
         print("######### Tuple number ", f + 1, "###########")
 
         tupleListA = receiveUplet()
-        print("1/4 : H(x)^alpha received ")
+        print(time.perf_counter() - start, " : 1/4 : H(x)^alpha received ")
 
         if len(list[f]) == 2:
             # upletB = creatingTuple2(registreB,list[f],p)
@@ -183,14 +220,14 @@ def linkage(dataset_B):
         # print(upletB)
         #send upletB to A
         sendUplet(upletB)
-        print("2/4 : H(y)^beta sent ")
+        print(time.perf_counter() - start, " : 2/4 : H(y)^beta sent ")
 
         invBeta = pow(beta, -1,q)
 
         #get the tupleB from A
 
         tupleListB = receiveUplet()
-        print("3/4 : H(y)^(beta*apha) received ")
+        print(time.perf_counter() - start, " : 3/4 : H(y)^(beta*apha) received ")
 
         idA = []  # The list that will save the ID of new linked elements of A
 
@@ -201,14 +238,19 @@ def linkage(dataset_B):
 
         for i in range(len(tupleListB)):
             if tupleListB[i] != "":
-                tupleListB[i]=pow(int(tupleListB[i]),invBeta,p)
+                tupleListB[i] = hashlib.sha256(str(pow(int(tupleListB[i]),invBeta,p)).encode('utf-8')).hexdigest()
+
+
 
         # for i in range(len(tupleListB)):
         compareTuple(tupleListA,tupleListB,idA,idB,BooleanA,registreB[8])
 
+        print("Number of linked records for this tuple : ", len(idA))
+
         #send idA to A
-        sendUplet(idA)
-        print("4/4 : idA sent ")
+        # sendUplet(idA)
+        sendIdA(idA)
+        print(time.perf_counter() - start, " : 4/4 : idA sent ")
 
     C = {'Value': registreB[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset B. True means linked, False the opposite
     donnees = pd.DataFrame(C, columns=['Value'])

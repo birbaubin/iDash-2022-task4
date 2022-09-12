@@ -9,6 +9,7 @@ import numpy
 import secrets
 
 
+start = time.perf_counter()
 dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
 
@@ -23,7 +24,7 @@ def receiveParams():
     json_data = json.loads(result.decode())
     p = json_data.get("p")
     q = json_data.get("q")
-    print("Parameters received : p=", p, " q=", q)
+    print(time.perf_counter() - start, " : Parameters received : p=", p, " q=", q)
     return p, q
 
 p, q = receiveParams()
@@ -47,6 +48,34 @@ def sendUplet(uplet):
         # print(json_data.encode())
         s.sendall(json_data.encode())
         time.sleep(0.005)
+
+
+def receiveIdA():
+
+    array = []
+    end = False
+    i = 0
+    while not end:
+        result = s.recv(1048576)
+        # print(result)
+        json_data = json.loads(result.decode())
+        id = json_data.get(str(i))
+        if id != "end":
+            array = array + id
+        else:
+            end = True
+
+        i+=1
+
+    return array
+
+    # result = s.recv(419430400)
+    # print(result)
+    # json_data = json.loads(result.decode())
+    # id = json_data.get(str("idA"))
+    #
+    # return id
+
 
 
 def extratingData(dataset):
@@ -107,7 +136,7 @@ def creatingTuple2(registre, tuple,p):
             uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked
         else:
             # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
-            uplet.append(hashlib.sha256((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16),alpha,p))).encode('utf-8')).hexdigest())
+            uplet.append(hashlib.sha256(str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16),alpha,p)).encode('utf-8')).hexdigest())
     return(uplet)
 
 def creatingTuple3(registre, tuple,p):
@@ -116,7 +145,7 @@ def creatingTuple3(registre, tuple,p):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k]:
             uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked
         else:
-            uplet.append(hashlib.sha256((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),alpha,p))).encode('utf-8')).hexdigest()) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
+            uplet.append(hashlib.sha256(str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),alpha,p)).encode('utf-8')).hexdigest()) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
     return(uplet)
 
 
@@ -143,13 +172,13 @@ def createTupleA(dataset_A,p):
         # s.sendall(json_data.encode())
 
         sendUplet(upletA)
-        print("1/4 : H(x)^alpha sent ")
+        print(time.perf_counter() - start, " : 1/4 : H(x)^alpha sent ")
 
 
         #get tuple from B (H(x)^beta)
         tuple = receiveUplet()
         # print(tuple)
-        print("2/4 : H(y)^beta received ")
+        print(time.perf_counter() - start, " : 2/4 : H(y)^beta received ")
 
         for i in range(len(tuple)):
             if tuple[i] != "":
@@ -157,18 +186,25 @@ def createTupleA(dataset_A,p):
 
         #send tuple to B
         sendUplet(tuple)
-        print("3/4 : H(y)^(beta*alpha) sent ")
+        print(time.perf_counter() - start, " : 3/4 : H(y)^(beta*alpha) sent ")
 
         #get idA from B
-        idA  = receiveUplet()
-        print("4/4 : IdA received")
+        idA  = receiveIdA()
+        print(time.perf_counter() - start, " : 4/4 : IdA received")
+        print("Number of linked records received for this tuple : ", len(idA))
 
-        print(idA)
+        # print(len(idA))
 
         for i in range(len(idA)):
-            registreA[idA[i]] = True
+            registreA[8][int(idA[i])] = True
 
     C = {'Value': registreA[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset A. True means linked, False the opposite
+
+    count = 0
+    for x in registreA[8]:
+        count += 1 if x is True else 0
+
+    print("Total linked : ", count)
     donnees = pd.DataFrame(C, columns=['Value'])
     donnees.to_csv('OutputA.csv', index=False, header=True, encoding='utf-8', sep=';')
 
