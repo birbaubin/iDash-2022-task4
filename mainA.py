@@ -1,13 +1,8 @@
-
-
 import json
-import math
 import socket
 import time
-import numpy as np
 import pandas as pd
 import hashlib
-import numpy
 import secrets
 
 start = time.perf_counter()
@@ -28,26 +23,68 @@ def receiveParams(s):
 # p = 10
 
 def receiveUplet(s):
-    uplet = []
-    for i in range(5000):
-        # print(i)
+    array = []
+    end = False
+    i = 0
+    while not end:
         result = s.recv(1048576)
         # print(result)
         json_data = json.loads(result.decode())
-        uplet = uplet + json_data.get(str(i))
-        s.sendall(b'ok')
+        id = json_data.get(str(i))
 
-
-    return uplet
+        if id != "end":
+            array = array + id
+            s.sendall(b'ok')
+        else:
+            end = True
+        i+=1
+    return array
 
 def sendUplet(uplet, s):
-    for i in range(5000):
-        #send upletA to B
-        # print(upletA)
-        json_data = json.dumps({str(i): uplet[i*100:i*100+100]})
-        # print(json_data.encode())
-        s.sendall(json_data.encode())
-        ok = s.recv(16)
+
+    end = False
+    i = 0
+    newUplet = []
+    for id in uplet:
+        newUplet.append(str(id))
+
+    while not end:
+        if i*200+200 >= len(newUplet):
+            # print("end")
+            end = True
+            json_data = json.dumps({str(i): newUplet[i*200:len(newUplet)]})
+            s.sendall(json_data.encode())
+        else:
+            json_data = json.dumps({str(i): newUplet[i*200:i*200+200]})
+            s.sendall(json_data.encode())
+
+        s.recv(16)
+
+        i+=1
+
+    # time.sleep(0.005)
+    json_data = json.dumps({str(i): "end"})
+    s.sendall(json_data.encode())
+
+
+    # while not end:
+    #
+    #     if i*100+100 >= len(newUplet):
+    #         # print("end")
+    #         end = True
+    #         json_data = json.dumps({str(i): newUplet[i*100:len(newUplet)]})
+    #         s.sendall(json_data.encode())
+    #     else:
+    #         json_data = json.dumps({str(i): newUplet[i*100:i*100+100]})
+    #         s.sendall(json_data.encode())
+    #
+    #     s.recv(16)
+    #
+    #     i+=1
+    #
+    # # time.sleep(0.005)
+    # json_data = json.dumps({str(i): "end"})
+    # s.sendall(json_data.encode())
 
 
 def receiveIdA(s):
@@ -122,7 +159,6 @@ def creatingTuple3(registre, tuple,p):
 
 def linkOneTuple(f, registreA, p):
 
-
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
     ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000]
 
@@ -134,49 +170,24 @@ def linkOneTuple(f, registreA, p):
 
     while not stop:
         try:
+            print("Current port : ", port)
             sock.connect((host, port))    # Establish connection with client.
             stop = True
         except Exception:
             print("Trying to reconnect...")
-
-
-    def receiveUplet():
-        uplet = []
-        for i in range(5000):
-            result = sock.recv(1048576)
-            json_data = json.loads(result.decode())
-            uplet = uplet + json_data.get(str(i))
-            sock.sendall(b'ok')
-
-        return uplet
-
-    def sendUplet(uplet):
-        for i in range(5000):
-            #send upletA to B
-            # print(upletA)
-            json_data = json.dumps({str(i): uplet[i*100:i*100+100]})
-            # print(json_data.encode())
-            sock.sendall(json_data.encode())
-            ok = sock.recv(16)
+            time.sleep(1)
 
     print("######### Tuple number ", f + 1, "###########")
-
     if len(list[f]) == 2:
         upletA = creatingTuple2(registreA,list[f],p)
     else:
         upletA = creatingTuple3(registreA,list[f],p)
 
-    # print(upletA)
-    # json_data = json.dumps({str(f): upletA[:10000]})
-    # # print(json_data.encode())
-    # s.sendall(json_data.encode())
-
-    sendUplet(upletA)
+    sendUplet(upletA, sock)
     print(time.perf_counter() - start, " : 1/4 : H(x)^alpha sent ")
 
-
     #get tuple from B (H(x)^beta)
-    tuple = receiveUplet()
+    tuple = receiveUplet(sock)
 
     print(time.perf_counter() - start, " : 2/4 : H(y)^beta received ")
 
@@ -185,7 +196,7 @@ def linkOneTuple(f, registreA, p):
             tuple[i] = pow(int(tuple[i]),alpha,p)
 
     #send tuple to B
-    sendUplet(tuple)
+    sendUplet(tuple, sock)
     print(time.perf_counter() - start, " : 3/4 : H(y)^(beta*alpha) sent ")
 
     #get idA from B
@@ -195,11 +206,12 @@ def linkOneTuple(f, registreA, p):
 
     sock.close()
 
-    sock.g
-    # print(len(idA))
 
     for i in range(len(idA)):
         registreA[8][int(idA[i])] = True
+
+
+
 
 
 

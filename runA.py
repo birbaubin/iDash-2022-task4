@@ -7,10 +7,10 @@ if __name__ == '__main__':
     import pandas as pd
     import secrets
     import socket
+    import threading
 
 
-
-    pool = mp.Pool(3)
+    # pool = mp.Pool(3)
     start = time.perf_counter()
     dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
     empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
@@ -23,10 +23,12 @@ if __name__ == '__main__':
 
     p, q = mainA.receiveParams(s)
 
+    result = []
+
     def linkage(dataset_A):
 
-        results = []
 
+        jobs = []
         preprocess = time.perf_counter()
 
         tupleListA = []
@@ -41,13 +43,26 @@ if __name__ == '__main__':
 
         print(time.perf_counter() - preprocess, " : Time for data extraction")
 
-        for f in range(len(list)):
-            async_result = pool.apply_async(mainA.linkOneTuple, (f,registreA, p))
-            results.append(async_result)
-            print("######### Tuple number ", f + 1, "###########")
+        lock = threading.Lock()
 
-        results = [r.get() for r in results]
-        print(results)
+        for f in range(len(list)):
+            # async_result = pool.apply_async(mainA.linkOneTuple, (f,registreA, p))
+            # results.append(async_result)
+            new_thread = threading.Thread(target=mainA.linkOneTuple, args=(f,registreA, p))
+            jobs.append(new_thread)
+            # print("######### Tuple number ", f + 1, "###########")
+
+        for job in jobs:
+            job.start()
+
+        for job in jobs:
+            job.join()
+
+        # results = [r.get() for r in results]
+        count = 0
+        for el in registreA[8]:
+            count += 1 if el is True else 0
+        print(count)
 
         C = {'Value': registreA[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset B. True means linked, False the opposite
         donnees = pd.DataFrame(C, columns=['Value'])
@@ -55,6 +70,4 @@ if __name__ == '__main__':
 
     linkage(dataset_A)
 
-#%%
 
-#%%
