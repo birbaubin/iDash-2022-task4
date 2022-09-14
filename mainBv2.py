@@ -5,7 +5,6 @@ import time
 import numpy as np
 import pandas as pd
 import hashlib
-import numpy
 import secrets
 
 start = time.perf_counter()
@@ -160,10 +159,10 @@ def creatingTupleMissing3(registre, tuple,missingCount):
     return(uplet)
 
 def compareTuple(upletA, upletB, idA, idB, BooleanA, registreB):
-    indexA = numpy.argsort(upletA) #Sorting the hashes while keeping in memory the ID of the hashes
-    upletA = numpy.sort(upletA)
-    indexB = numpy.argsort(upletB) #Sorting the hashes while keeping in memory the ID of the hashes
-    upletB = numpy.sort(upletB)
+    indexA = np.argsort(upletA) #Sorting the hashes while keeping in memory the ID of the hashes
+    upletA = np.sort(upletA)
+    indexB = np.argsort(upletB) #Sorting the hashes while keeping in memory the ID of the hashes
+    upletB = np.sort(upletB)
 
 
     l = 0
@@ -207,8 +206,8 @@ def linkage(dataset_B):
         sendIdA(idA)
         print("Number of linked records for this tuple : ", len(idA))
 
-    list = np.array([[2,7],[5,7],[0,1,7],[0,4,7],[0,5,7],[1,4,7],[1,5,7]])
-    missing = [4,4,4,3,3,3,3]
+    list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
+    missing = [4,4,4,3,3,3]
 
     for f in range(len(list)):
         idA = []
