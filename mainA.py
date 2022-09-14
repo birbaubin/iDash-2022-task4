@@ -1,3 +1,5 @@
+
+
 import json
 import math
 import socket
@@ -8,18 +10,13 @@ import hashlib
 import numpy
 import secrets
 
-
 start = time.perf_counter()
 dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
 
 alpha = (secrets.randbits(50)+1)*2 #choose the security value
-s = socket.socket()         # Create a socket object
-host = socket.gethostbyname("") # Get local machine name
-port = 12345
-s.connect((host, port))
 
-def receiveParams():
+def receiveParams(s):
     result = s.recv(1024)
     json_data = json.loads(result.decode())
     p = json_data.get("p")
@@ -27,9 +24,10 @@ def receiveParams():
     print(time.perf_counter() - start, " : Parameters received : p=", p, " q=", q)
     return p, q
 
-p, q = receiveParams()
 
-def receiveUplet():
+# p = 10
+
+def receiveUplet(s):
     uplet = []
     for i in range(5000):
         # print(i)
@@ -42,7 +40,7 @@ def receiveUplet():
 
     return uplet
 
-def sendUplet(uplet):
+def sendUplet(uplet, s):
     for i in range(5000):
         #send upletA to B
         # print(upletA)
@@ -52,7 +50,7 @@ def sendUplet(uplet):
         ok = s.recv(16)
 
 
-def receiveIdA():
+def receiveIdA(s):
 
     array = []
     end = False
@@ -62,22 +60,15 @@ def receiveIdA():
         # print(result)
         json_data = json.loads(result.decode())
         id = json_data.get(str(i))
+
         if id != "end":
             array = array + id
+            s.sendall(b'ok')
         else:
             end = True
-
         i+=1
 
     return array
-
-    # result = s.recv(419430400)
-    # print(result)
-    # json_data = json.loads(result.decode())
-    # id = json_data.get(str("idA"))
-    #
-    # return id
-
 
 
 def extratingData(dataset):
@@ -107,27 +98,6 @@ def extratingData(dataset):
 
     registre = [fName, lName, bDay, mail, phone, address, SSN, missing, boolean, missingCount]
 
-    for i in range(len(missing)):
-        missing = 0
-        missingCount = 0
-        if registre[2][i] == empty:
-            missing += 1
-            missingCount += 1
-        if registre[3][i] == empty:
-            missing += 2
-            missingCount += 1
-        if registre[4][i] == empty:
-            missing += 4
-            missingCount += 1
-        if registre[5][i] == empty:
-            missing += 8
-            missingCount += 1
-        if registre[6][i] == empty:
-            missing += 16
-            missingCount += 1
-
-        registre[7][i] = str(missing)
-        registre[9][i] = missingCount
     return registre
 
 def creatingTuple2(registre, tuple,p):
@@ -150,70 +120,86 @@ def creatingTuple3(registre, tuple,p):
             uplet.append(hashlib.sha256(str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),alpha,p)).encode('utf-8')).hexdigest()) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
     return(uplet)
 
+def linkOneTuple(f, registreA, p):
 
 
+    list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
+    ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000]
 
-def createTupleA(dataset_A,p):
-    np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
-    registreA = extratingData(dataset_A)
+    sock = socket.socket()
+    host = socket.gethostbyname("")
+    port = ports[f]
 
-    list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
+    stop = False
 
-    for f in range(len(list)):
-
-        print("######### Tuple number ", f + 1, "###########")
-
-        if len(list[f]) == 2:
-            upletA = creatingTuple2(registreA,list[f],p)
-        else:
-            upletA = creatingTuple3(registreA,list[f],p)
-
-        # print(upletA)
-        # json_data = json.dumps({str(f): upletA[:10000]})
-        # # print(json_data.encode())
-        # s.sendall(json_data.encode())
-
-        sendUplet(upletA)
-        print(time.perf_counter() - start, " : 1/4 : H(x)^alpha sent ")
+    while not stop:
+        try:
+            sock.connect((host, port))    # Establish connection with client.
+            stop = True
+        except Exception:
+            print("Trying to reconnect...")
 
 
-        #get tuple from B (H(x)^beta)
-        tuple = receiveUplet()
+    def receiveUplet():
+        uplet = []
+        for i in range(5000):
+            result = sock.recv(1048576)
+            json_data = json.loads(result.decode())
+            uplet = uplet + json_data.get(str(i))
+            sock.sendall(b'ok')
 
-        print(time.perf_counter() - start, " : 2/4 : H(y)^beta received ")
+        return uplet
 
-        for i in range(len(tuple)):
-            if tuple[i] != "":
-                tuple[i] = pow(int(tuple[i]),alpha,p)
+    def sendUplet(uplet):
+        for i in range(5000):
+            #send upletA to B
+            # print(upletA)
+            json_data = json.dumps({str(i): uplet[i*100:i*100+100]})
+            # print(json_data.encode())
+            sock.sendall(json_data.encode())
+            ok = sock.recv(16)
 
-        #send tuple to B
-        sendUplet(tuple)
-        print(time.perf_counter() - start, " : 3/4 : H(y)^(beta*alpha) sent ")
+    print("######### Tuple number ", f + 1, "###########")
 
-        #get idA from B
-        idA  = receiveIdA()
-        print(time.perf_counter() - start, " : 4/4 : IdA received")
-        print("Number of linked records received for this tuple : ", len(idA))
+    if len(list[f]) == 2:
+        upletA = creatingTuple2(registreA,list[f],p)
+    else:
+        upletA = creatingTuple3(registreA,list[f],p)
 
-        # print(len(idA))
+    # print(upletA)
+    # json_data = json.dumps({str(f): upletA[:10000]})
+    # # print(json_data.encode())
+    # s.sendall(json_data.encode())
 
-        for i in range(len(idA)):
-            registreA[8][int(idA[i])] = True
+    sendUplet(upletA)
+    print(time.perf_counter() - start, " : 1/4 : H(x)^alpha sent ")
 
-    C = {'Value': registreA[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset A. True means linked, False the opposite
 
-    count = 0
-    for x in registreA[8]:
-        count += 1 if x is True else 0
+    #get tuple from B (H(x)^beta)
+    tuple = receiveUplet()
 
-    print("Total linked : ", count)
-    donnees = pd.DataFrame(C, columns=['Value'])
-    donnees.to_csv('OutputA.csv', index=False, header=True, encoding='utf-8', sep=';')
+    print(time.perf_counter() - start, " : 2/4 : H(y)^beta received ")
 
-    s.close()
+    for i in range(len(tuple)):
+        if tuple[i] != "":
+            tuple[i] = pow(int(tuple[i]),alpha,p)
 
-createTupleA(dataset_A, p)
+    #send tuple to B
+    sendUplet(tuple)
+    print(time.perf_counter() - start, " : 3/4 : H(y)^(beta*alpha) sent ")
 
+    #get idA from B
+    idA  = receiveIdA(sock)
+    print(time.perf_counter() - start, " : 4/4 : IdA received")
+    print("Number of linked records received for this tuple : ", len(idA))
+
+    sock.close()
+
+    sock.g
+    # print(len(idA))
+
+    for i in range(len(idA)):
+        registreA[8][int(idA[i])] = True
 
 
 
