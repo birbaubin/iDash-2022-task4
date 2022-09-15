@@ -15,7 +15,6 @@ from Crypto.PublicKey import ECC
 start = time.perf_counter()
 # dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
 dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
-empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
 alpha = secrets.randbits(256) #choose the security value
 s = socket.socket()        # Create a socket object
 host = socket.gethostbyname("") # Get local machine name
@@ -267,7 +266,7 @@ def extratingData(dataset):
         missingCount.append(0)
 
     registre = [np.array(fName), np.array(lName), np.array(bDay), np.array(mail), np.array(phone), np.array(address), np.array(SSN), np.array(missing), np.array(boolean), np.array(missingCount)] #np.array pour chaque élement
-
+    empty = getEmpty(registre)
     for i in range(len(missing)):
         missing = 0
         missingCount = 0
@@ -291,7 +290,7 @@ def extratingData(dataset):
         registre[9][i] = missingCount
     return registre
 
-def creatingTuple2(registre, tuple,G):
+def creatingTuple2(registre, tuple,G,empty):
 
     uplet = []  # The creation of the the tuple array
     for k in range(len(registre[0])):
@@ -308,7 +307,7 @@ def creatingTuple2(registre, tuple,G):
             uplet.append(hashPoint(xialpha)) #H(alphaPi) = H(alphaPi.n || alphaPi.m)
     return(uplet)
 
-def creatingTuple3(registre, tuple,G):
+def creatingTuple3(registre, tuple,G,empty):
     uplet = []  # The creation of the the tuple array
     for k in range(len(registre[0])):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k]:
@@ -325,7 +324,7 @@ def creatingTuple3(registre, tuple,G):
             # a changer comme dans creatingTuple2
     return(uplet)
 
-def creatingTupleMissing2(registre, tuple,missingCount,G):
+def creatingTupleMissing2(registre, tuple,missingCount,G,empty):
 
     uplet = []  # The creation of the the tuple array
     for k in range(len(registre[0])):
@@ -338,7 +337,7 @@ def creatingTupleMissing2(registre, tuple,missingCount,G):
             uplet.append(hashPoint(xialpha)) #H(alphaPi) = H(alphaPi.n || alphaPi.m)
     return(uplet)
 
-def creatingTupleMissing3(registre, tuple,missingCount,G):
+def creatingTupleMissing3(registre, tuple,missingCount,G,empty):
 
     uplet = []  # The creation of the the tuple array
     for k in range(len(registre[0])):
@@ -370,7 +369,7 @@ def timer(commit):
     print(time.perf_counter() - start, commit)
 
 
-def create_one_tuple(f,registreA,G):
+def create_one_tuple(f,registreA,G,empty):
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
     #list = np.array([[0, 1,2], [0, 1,5], [1,3]])
@@ -395,9 +394,9 @@ def create_one_tuple(f,registreA,G):
     print("######### Tuple number ", f + 1, "########### for ", num_thread)
     timer("Begin of constructing UpletA")
     if len(list[f]) == 2:
-        upletA = creatingTuple2(registreA,list[f],G)
+        upletA = creatingTuple2(registreA,list[f],G,empty)
     else:
-        upletA = creatingTuple3(registreA,list[f],G)
+        upletA = creatingTuple3(registreA,list[f],G,empty)
     # uplet A is a list of hash
     timer("End of constructing UpletA")
 
@@ -410,7 +409,7 @@ def create_one_tuple(f,registreA,G):
     #get tuple from B (y^beta)
     timer("Begin of receiving UpletB")
     tuple = receiveUpletPoint(sock)
-    timer("Begin of receiving UpletB")
+    timer("End of receiving UpletB")
 
 
     timer("Begin of computing alpha*beta*y")
@@ -432,7 +431,7 @@ def create_one_tuple(f,registreA,G):
         registreA[8][int(idA[i])] = True
     # registreA[8] = registreA[8][unshuf_order] # Unshuffle the shuffled data
 
-def create_one_tuple_missing(f,registreA,G):
+def create_one_tuple_missing(f,registreA,G,empty):
 
     list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3]
@@ -457,9 +456,9 @@ def create_one_tuple_missing(f,registreA,G):
     print("######### Tuple number ", f + 1, "########### for ", num_thread)
     timer("Begin of constructing UpletA")
     if len(list[f]) == 2:
-        upletA = creatingTupleMissing2(registreA,list[f],missing[f],G)
+        upletA = creatingTupleMissing2(registreA,list[f],missing[f],G,empty)
     else:
-        upletA = creatingTuple3(registreA,list[f],missing[f],G)
+        upletA = creatingTupleMissing3(registreA,list[f],missing[f],G,empty)
     # uplet A is a list of hash
     timer("End of constructing UpletA")
 
@@ -472,7 +471,7 @@ def create_one_tuple_missing(f,registreA,G):
     #get tuple from B (y^beta)
     timer("Begin of receiving UpletB")
     tuple = receiveUpletPoint(sock)
-    timer("Begin of receiving UpletB")
+    timer("End of receiving UpletB")
 
 
     timer("Begin of computing alpha*beta*y")
@@ -494,7 +493,13 @@ def create_one_tuple_missing(f,registreA,G):
         registreA[8][int(idA[i])] = True
     # registreA[8] = registreA[8][unshuf_order] # Unshuffle the shuffled data
 
-
+def getEmpty(registreA):
+    empty =""
+    for i in range(len(registreA[6])):
+        if registreA[6][i]==registreA[6][i+1]:
+            empty = registreA[6][i]
+            break
+    return empty
 
 def createTupleA(dataset_A):
 
@@ -502,7 +507,7 @@ def createTupleA(dataset_A):
     jobs = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreA = extratingData(dataset_A)
-
+    empty=getEmpty(registreA)
     unshuf_order = shuffling(registreA)
 
     
@@ -519,12 +524,12 @@ def createTupleA(dataset_A):
 
     for f in range(tuple1):
 
-        new_thread = threading.Thread(target=create_one_tuple,args=(f,registreA,G))
+        new_thread = threading.Thread(target=create_one_tuple,args=(f,registreA,G,empty))
         jobs.append(new_thread)
 
     for f in range(tuple2):
 
-        new_thread = threading.Thread(target=create_one_tuple_missing,args=(f,registreA,G))
+        new_thread = threading.Thread(target=create_one_tuple_missing,args=(f,registreA,G,empty))
         jobs.append(new_thread)
 
     for job in jobs:

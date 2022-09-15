@@ -22,7 +22,6 @@ parser.add_argument('--sum', dest='accumulate', action='store_const',
 args = parser.parse_args()
 # dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
-empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
 # size_q = 256 #choose the security value
 beta = secrets.randbits(256)#choose the security value
 p = 115792089210356248762697446949407573530086143415290314195533631308867097853951 # prime of the p-256 curve
@@ -38,6 +37,7 @@ Total_idA = []
 
 
 numberOfTuple = int(args.accumulate(args.integers)) #Variable à prendre en paramètre
+print(numberOfTuple)
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
     numberOfTuple=14
@@ -267,7 +267,7 @@ def extratingData(dataset):
         missingCount.append(0)
 
     registre = [fName, lName, bDay, mail, phone, address, SSN, missing, boolean, missingCount]
-
+    empty=getEmpty(registre)
     for i in range(len(missing)):
         missing = 0
         missingCount = 0
@@ -291,7 +291,7 @@ def extratingData(dataset):
         registre[9][i] = missingCount
     return registre
 
-def creatingTuple2(registre, tuple, G):
+def creatingTuple2(registre, tuple, G,empty):
 
     uplet = []  # The creation of the the tuple array
     for k in range(len(registre[0])):
@@ -308,7 +308,7 @@ def creatingTuple2(registre, tuple, G):
             uplet.append(beta*Qi)
     return(uplet)
 
-def creatingTuple3(registre, tuple,G):
+def creatingTuple3(registre, tuple,G,empty):
     uplet = []  # The creation of the the tuple array
     for k in range(len(registre[0])):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k]:
@@ -323,7 +323,7 @@ def creatingTuple3(registre, tuple,G):
             
     return(uplet)
 
-def creatingTupleMissing2(registre, tuple,missingCount,G):
+def creatingTupleMissing2(registre, tuple,missingCount,G,empty):
 
     uplet = []  # The creation of the the tuple array
     for k in range(len(registre[0])):
@@ -336,7 +336,7 @@ def creatingTupleMissing2(registre, tuple,missingCount,G):
             uplet.append(beta*Qi)
             return(uplet)
 
-def creatingTupleMissing3(registre, tuple,missingCount,G):
+def creatingTupleMissing3(registre, tuple,missingCount,G,empty):
 
     uplet = []  # The creation of the the tuple array
     for k in range(len(registre[0])):
@@ -378,7 +378,7 @@ def timer(commit):
 
 
 
-def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA):
+def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
     
     ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000]
@@ -405,10 +405,10 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA):
     # upletB is a list of ECC points
     if len(list[f]) == 2:
         # upletB = creatingTuple2(registreB,list[f],p)
-        upletB = creatingTuple2(registreB,list[f],G)
+        upletB = creatingTuple2(registreB,list[f],G,empty)
     else:
         # upletB = creatingTuple3(registreB,list[f],p)
-        upletB = creatingTuple3(registreB,list[f],G)
+        upletB = creatingTuple3(registreB,list[f],G,empty)
     # upletB is a list of ECC points
     timer("End of constructing UpletB")
 
@@ -445,7 +445,7 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA):
     # for i in range(len(tupleListB)):
     timer("Begin of comparison")
     compareTuple(tupleListA,tupleListB,idA,idB,BooleanA,registreB[8])
-    timer("Begin of comparison")
+    timer("End of comparison")
 
     # send idA to A
     # sendUplet(idA)
@@ -455,7 +455,7 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA):
     # Total_idA = Total_idA + idA
     print("Number of linked records for this tuple : ", len(idA))
 
-def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA):
+def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
 
     ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000] #Choisir d'autres ports
@@ -482,10 +482,10 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA):
     # upletB is a list of ECC points
     if len(list[f]) == 2:
         # upletB = creatingTuple2(registreB,list[f],p)
-        upletB = creatingTupleMissing2(registreB,list[f],missing[f],G)
+        upletB = creatingTupleMissing2(registreB,list[f],missing[f],G,empty)
     else:
         # upletB = creatingTuple3(registreB,list[f],p)
-        upletB = creatingTupleMissing3(registreB,list[f],missing[f],G)
+        upletB = creatingTupleMissing3(registreB,list[f],missing[f],G,empty)
     # upletB is a list of ECC points
     timer("End of constructing UpletB")
 
@@ -522,7 +522,7 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA):
     # for i in range(len(tupleListB)):
     timer("Begin of comparison")
     compareTuple(tupleListA,tupleListB,idA,idB,BooleanA,registreB[8])
-    timer("Begin of comparison")
+    timer("End of comparison")
 
     # send idA to A
     # sendUplet(idA)
@@ -532,15 +532,26 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA):
     # Total_idA = Total_idA + idA
     print("Number of linked records for this tuple : ", len(idA))
 
+def getEmpty(registreB):
+    empty =""
+    for i in range(len(registreB[6])):
+        if registreB[6][i]==registreB[6][i+1]:
+            empty = registreB[6][i]
+            break
+    return empty
 
 
 def linkage(dataset_B):
     #get the tuple from A
     sendNumberOfUplet(numberOfTuple, c)
+
     jobs = []
     tupleListA = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreB = extratingData(dataset_B)
+    timer("temps get empty begin")
+    empty=getEmpty(registreB)
+    timer("temps get empty end")
 
     list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
     #list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6]])
@@ -563,12 +574,12 @@ def linkage(dataset_B):
 
     for f in range(tuple1):
 
-        new_thread = threading.Thread(target=link_one_tuple,args=(f,registreB,BooleanA,idB,beta,G,Total_idA))
+        new_thread = threading.Thread(target=link_one_tuple,args=(f,registreB,BooleanA,idB,beta,G,Total_idA,empty))
         jobs.append(new_thread)
 
     for f in range(tuple2):
 
-        new_thread = threading.Thread(target=link_one_tuple_missing,args=(f,registreB,BooleanA,idB,beta,G,Total_idA))
+        new_thread = threading.Thread(target=link_one_tuple_missing,args=(f,registreB,BooleanA,idB,beta,G,Total_idA,empty))
         jobs.append(new_thread)
 
     for job in jobs:
