@@ -33,6 +33,16 @@ c, addr = sock.accept()     # Establish connection with client.
 print('Got connection from ', addr)
 Total_idA = []
 
+numberOfTuple = args[1] #Variable à prendre en paramètre
+if numberOfTuple > 14:
+    print("Maximum number of tuple is 14, numberOfTuple set to 14")
+    numberOfTuple=14
+if numberOfTuple < 4:
+    print("Minimum number of tuple is 4, numberOfTuple set to 4")
+    numberOfTuple=4
+
+
+
 
 
 def hashPoint(P):
@@ -516,6 +526,7 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA):
 
 def linkage(dataset_B):
     #get the tuple from A
+    sendUplet(numberOfTuple, c)
     jobs = []
     tupleListA = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)

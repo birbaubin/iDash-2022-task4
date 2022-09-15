@@ -22,7 +22,6 @@ host = socket.gethostbyname("") # Get local machine name
 port = 12345
 s.connect((host, port))
 
-numberOfTuple = 4 #get numberOfTuple from B
 # def receiveParams():
 #     result = s.recv(1024)
 #     json_data = json.loads(result.decode())
@@ -492,6 +491,7 @@ def create_one_tuple_missing(f,registreA,G):
 
 def createTupleA(dataset_A):
 
+    numberOfTuple = receiveUplet(s)
     jobs = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreA = extratingData(dataset_A)
