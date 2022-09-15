@@ -10,12 +10,11 @@ import threading
 
 from Crypto.PublicKey import ECC
 
-from ecc import G
 
 
 start = time.perf_counter()
 # dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
-dataset_A = pd.read_csv("datasetAUnitest.csv")  # Opening dataset A
+dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
 alpha = secrets.randbits(256) #choose the security value
 s = socket.socket()        # Create a socket object
@@ -205,7 +204,7 @@ def sendUpletPoint(uplet, s):
 #         s.sendall(json_data.encode())
 #         ok = s.recv(16)
 
-def receiveIdA():
+def receiveIdA(s):
 
     array = []
     end = False
@@ -221,6 +220,8 @@ def receiveIdA():
             end = True
 
         i+=1
+
+        s.sendall(b"ok")
 
     return array
 
@@ -258,7 +259,7 @@ def extratingData(dataset):
         missing.append(0)
         missingCount.append(0)
 
-    registre = [fName, lName, bDay, mail, phone, address, SSN, missing, boolean, missingCount] #np.array pour chaque élement
+    registre = [np.array(fName), np.array(lName), np.array(bDay), np.array(mail), np.array(phone), np.array(address), np.array(SSN), np.array(missing), np.array(boolean), np.array(missingCount)] #np.array pour chaque élement
 
     for i in range(len(missing)):
         missing = 0
@@ -338,7 +339,8 @@ def timer(commit):
 
 def create_one_tuple(f,registreA,G):
 
-    list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
+    #list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
+    list = np.array([[0, 1,2], [0, 1,5], [1,3]])
     ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000]
 
     sock = socket.socket()
@@ -390,7 +392,7 @@ def create_one_tuple(f,registreA,G):
     timer("End of sending alpha*beta*y")
 
     timer("Begin of receiving Total_IdA")
-    idA  = receiveIdA()
+    idA  = receiveIdA(sock)
     timer("End of receiving Total_IdA")
 
     for i in range(len(idA)):
@@ -406,10 +408,11 @@ def createTupleA(dataset_A):
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreA = extratingData(dataset_A)
 
-    # unshuf_order = shuffling(registreA)
+    unshuf_order = shuffling(registreA)
 
     
-    list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
+    #list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
+    list = np.array([[0, 1,2], [0, 1,5], [1,3]])
     G = ECC.EccPoint(ECC._curves['p256'].Gx,ECC._curves['p256'].Gy,"p256")
 
     for f in range(len(list)):
@@ -430,7 +433,8 @@ def createTupleA(dataset_A):
 
     # for i in range(len(idA)):
     #     registreA[8][int(idA[i])] = True
-    # registreA[8] = registreA[8][unshuf_order] # Unshuffle the shuffled data
+
+    registreA[8] = registreA[8][unshuf_order] # Unshuffle the shuffled data
     C = {'Value': registreA[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset A. True means linked, False the opposite
 
     count = 0
@@ -447,6 +451,3 @@ createTupleA(dataset_A)
 
 
 
-
-
-# %%

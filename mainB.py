@@ -14,7 +14,7 @@ from Crypto.PublicKey import ECC
 
 start = time.perf_counter()
 # dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
-dataset_B = pd.read_csv("datasetBUniTest.csv")  # Opening dataset B
+dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
 # size_q = 256 #choose the security value
 beta = secrets.randbits(256)#choose the security value
@@ -195,7 +195,7 @@ def sendIdA(idA,c):
         newIdA.append(str(id))
 
     while not end:
-        time.sleep(0.005)
+        #time.sleep(0.005)
 
         if i*1000+1000 >= len(idA):
             # print("end")
@@ -205,18 +205,14 @@ def sendIdA(idA,c):
         else:
             json_data = json.dumps({str(i): newIdA[i*1000:i*1000+1000]})
             c.sendall(json_data.encode())
-        # except Exception:
-        #     print("exception")
-        #     json_data = json.dumps({str(i): newIdA[i*1000:len(newIdA)]})
-        #     c.sendall(json_data.encode())
-        #     c.sendall(json.dumps({str(i+1): "end"}).encode())
-        #     end = True
-
+            
+        c.recv(16)
         i+=1
 
-    time.sleep(0.005)
+    #time.sleep(0.005)
     json_data = json.dumps({str(i): "end"})
     c.sendall(json_data.encode())
+    c.recv(16)
 
 
 
@@ -311,7 +307,7 @@ def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
 
 
     l = 0
-    sizeofdataset = 5000 #500000
+    sizeofdataset = 500000 #5000
     for k in range(0, sizeofdataset, 1):  # Efficient comparison of sorted list
         if not upletA[k] == "":  # verifying that the k-th tuple wasn't already linked or that one of its component was empty
             while l < sizeofdataset and upletA[k] > upletB[l]:
@@ -346,8 +342,8 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA):
     c, addr = sock.accept()     # Establish connection with client.
     print('Got connection from ', addr)
 
-    list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
-
+    #list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
+    list = np.array([[0, 1,2], [0, 1,5], [1,3]])
 
     num_thread = threading.get_ident()
     print("######### Tuple number ", f + 1, "###########", num_thread)
@@ -420,7 +416,8 @@ def linkage(dataset_B):
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreB = extratingData(dataset_B)
 
-    list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
+    #list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
+    list = np.array([[0, 1,2], [0, 1,5], [1,3]])
     G = ECC.EccPoint(ECC._curves['p256'].Gx,ECC._curves['p256'].Gy,"p256")
 
     idB = [] # The list that will save the ID of linked elements of B
@@ -444,9 +441,9 @@ def linkage(dataset_B):
     
 
 
-    timer("Begin of sending Total_idA")
-    sendIdA(Total_idA)
-    timer("Begin of sending Total_idA")
+    #timer("Begin of sending Total_idA")
+    #sendIdA(Total_idA)
+    #timer("Begin of sending Total_idA")
 
     C = {'Value': registreB[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset B. True means linked, False the opposite
     donnees = pd.DataFrame(C, columns=['Value'])
