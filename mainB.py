@@ -24,8 +24,9 @@ args = parser.parse_args()
 dataset_B = pd.read_csv(args.d)
 # size_q = 256 #choose the security value
 beta = secrets.randbits(256)#choose the security value
-p = 115792089210356248762697446949407573530086143415290314195533631308867097853951 # prime of the p-256 curve
-order = 115792089210356248762697446949407573529996955224135760342422259061068512044369
+
+p = ECC._curves['p256'].p
+order = ECC._curves['p256'].order
 sock = socket.socket()
 host = socket.gethostbyname("")
 port = 12345
