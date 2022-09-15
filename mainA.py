@@ -5,16 +5,22 @@ import numpy as np
 import pandas as pd
 import hashlib
 import secrets
+import argparse
 
 import threading
 
 from Crypto.PublicKey import ECC
 
-
+parser = argparse.ArgumentParser(description='Process some integers.')
+# parser.add_argument('integers', metavar='N', type=int, nargs='+', help='an integer for the accumulator')
+parser.add_argument('-d', type=str, help='Path to dataset')
+args = parser.parse_args()
 
 start = time.perf_counter()
 # dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
-dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
+# dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
+dataset_A = pd.read_csv(args.d)  # Opening dataset A
+
 alpha = secrets.randbits(256) #choose the security value
 s = socket.socket()        # Create a socket object
 host = socket.gethostbyname("") # Get local machine name
@@ -435,7 +441,7 @@ def create_one_tuple_missing(f,registreA,G,empty):
 
     list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3]
-    ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000] #changer les ports
+    ports = [13376, 13346, 13347, 13348, 13349, 13350] #changer les ports
 
     sock = socket.socket()
     host = socket.gethostbyname("")

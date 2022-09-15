@@ -15,13 +15,13 @@ from Crypto.PublicKey import ECC
 start = time.perf_counter()
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('integers', metavar='N', type=int, nargs='+', help='an integer for the accumulator')
-parser.add_argument('--sum', dest='accumulate', action='store_const',
-                    const=sum, default=max,
-                    help='sum the integers (default: find the max)')
+# parser.add_argument('integers', metavar='N', type=int, nargs='+', help='an integer for the accumulator')
+parser.add_argument('-n', type=int, help='The number of uplet processed')
+parser.add_argument('-d', type=str, help='Path to dataset')
 args = parser.parse_args()
 # dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
-dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
+# dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
+dataset_B = pd.read_csv(args.d)
 # size_q = 256 #choose the security value
 beta = secrets.randbits(256)#choose the security value
 p = 115792089210356248762697446949407573530086143415290314195533631308867097853951 # prime of the p-256 curve
@@ -35,8 +35,8 @@ c, addr = sock.accept()     # Establish connection with client.
 print('Got connection from ', addr)
 Total_idA = []
 
-
-numberOfTuple = int(args.accumulate(args.integers)) #Variable à prendre en paramètre
+numberOfTuple = args.n
+# numberOfTuple = int(args.accumulate(args.integers)) #Variable à prendre en paramètre
 print(numberOfTuple)
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
@@ -458,7 +458,7 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
 
-    ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000] #Choisir d'autres ports
+    ports = [13376, 13346, 13347, 13348, 13349, 13350] #Choisir d'autres ports
     sock = socket.socket()
     host = socket.gethostbyname("")
     port = ports[f]
