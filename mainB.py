@@ -5,7 +5,7 @@ import pandas as pd
 import hashlib
 import secrets
 import socket
-
+import argparse
 import threading
 
 from Crypto.PublicKey import ECC
@@ -13,6 +13,10 @@ from Crypto.PublicKey import ECC
 
 
 start = time.perf_counter()
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('integers', metavar='N', type=int, nargs='+', help='an integer for the accumulator')
+args = parser.parse_args()
 # dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 empty = '9b2d5b4678781e53038e91ea5324530a03f27dc1d0e5f6c9bc9d493a23be9de0'  # The hash value of empty
@@ -299,6 +303,31 @@ def creatingTuple3(registre, tuple,G):
             
     return(uplet)
 
+def creatingTupleMissing2(registre, tuple,missingCount,G):
+
+    uplet = []  # The creation of the the tuple array
+    for k in range(len(registre[0])):
+        if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
+            uplet.append(G.point_at_infinity())
+        else:
+            yi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16)
+            # tranformer yi en Qi puis calcul betaQi
+            Qi = yi*G
+            uplet.append(beta*Qi)
+            return(uplet)
+
+def creatingTupleMissing3(registre, tuple,missingCount,G):
+
+    uplet = []  # The creation of the the tuple array
+    for k in range(len(registre[0])):
+        if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
+            uplet.append(G.point_at_infinity())
+        else:
+            yi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16)
+            Qi = yi*G
+            uplet.append(beta*Qi)
+            return(uplet)
+
 def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
     indexA = np.argsort(upletA) #Sorting the hashes while keeping in memory the ID of the hashes
     upletA = np.sort(upletA)
@@ -342,8 +371,8 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA):
     c, addr = sock.accept()     # Establish connection with client.
     print('Got connection from ', addr)
 
-    #list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
-    list = np.array([[0, 1,2], [0, 1,5], [1,3]])
+    list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
+    #list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6]])
 
     num_thread = threading.get_ident()
     print("######### Tuple number ", f + 1, "###########", num_thread)
@@ -406,6 +435,82 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA):
     # Total_idA = Total_idA + idA
     print("Number of linked records for this tuple : ", len(idA))
 
+def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA):
+
+
+    ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000] #Choisir d'autres ports
+    sock = socket.socket()
+    host = socket.gethostbyname("")
+    port = ports[f]
+    print("Current port : ", port)
+    sock.bind((host, port))
+    sock.listen(5)
+    c, addr = sock.accept()     # Establish connection with client.
+    print('Got connection from ', addr)
+
+    list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
+    missing = [4,4,4,3,3,3]
+
+    num_thread = threading.get_ident()
+    print("######### Tuple number ", f + 1, "###########", num_thread)
+    timer("Begin of receiving UpletA")
+    tupleListA = receiveUplet(c)
+    timer("End of receiving UpletA")
+
+
+    timer("Begin of constructing UpletB")
+    # upletB is a list of ECC points
+    if len(list[f]) == 2:
+        # upletB = creatingTuple2(registreB,list[f],p)
+        upletB = creatingTupleMissing2(registreB,list[f],missing[f],G)
+    else:
+        # upletB = creatingTuple3(registreB,list[f],p)
+        upletB = creatingTupleMissing3(registreB,list[f],missing[f],G)
+    # upletB is a list of ECC points
+    timer("End of constructing UpletB")
+
+
+    #send upletB to A
+    timer("Begin of sending UpletB")
+    sendUpletPoint(upletB,c) # peut être à changer pour ECC
+    timer("End of sending UpletB")
+    # print(time.perf_counter() - start, " : 2/4 : y^beta sent ")
+
+    invBeta = pow(beta, order-2 ,order) # a voir ECC
+
+    #get the tupleB from A
+
+    timer("Begin of receiving UpletB")
+    tupleListB = receiveUpletPoint(c) # here tupleListB is a list of ECC points
+    timer("End of receiving UpletB")
+
+
+    timer("Begin of computing and hashing invbeta*alpha*beta*y")
+    idA = []  # The list that will save the ID of new linked elements of A
+    for i in range(len(tupleListB)):
+        if (tupleListB[i].is_point_at_infinity() == False):
+            # à changer en ECC
+            ri = tupleListB[i] # Ri
+            fi = invBeta*ri #Ri^invBeta
+            tupleListB[i] = hashPoint(fi) #h(Fi_m||Fi_n)
+        else :
+            tupleListB[i] = ""
+    timer("End of computing and hashing invbeta*alpha*beta*y")
+    # here tupleListB is a list of hash of point
+
+
+    # for i in range(len(tupleListB)):
+    timer("Begin of comparison")
+    compareTuple(tupleListA,tupleListB,idA,idB,BooleanA,registreB[8])
+    timer("Begin of comparison")
+
+    # send idA to A
+    # sendUplet(idA)
+    timer("Begin of sending idA")
+    sendIdA(idA,c)
+    timer("End of sending idA")
+    # Total_idA = Total_idA + idA
+    print("Number of linked records for this tuple : ", len(idA))
 
 
 
@@ -416,8 +521,8 @@ def linkage(dataset_B):
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreB = extratingData(dataset_B)
 
-    #list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
-    list = np.array([[0, 1,2], [0, 1,5], [1,3]])
+    list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
+    #list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6]])
     G = ECC.EccPoint(ECC._curves['p256'].Gx,ECC._curves['p256'].Gy,"p256")
 
     idB = [] # The list that will save the ID of linked elements of B
@@ -427,10 +532,22 @@ def linkage(dataset_B):
     for i in range(len(registreB[0])):
         BooleanA.append(False)
 
-    
-    for f in range(len(list)):
+
+    if numberOfTuple < 9:
+        tuple1 = numberOfTuple
+        tuple2 = 0
+    else:
+        tuple1 = 8
+        tuple2 = numberOfTuple-8
+
+    for f in range(tuple1):
 
         new_thread = threading.Thread(target=link_one_tuple,args=(f,registreB,BooleanA,idB,beta,G,Total_idA))
+        jobs.append(new_thread)
+
+    for f in range(tuple2):
+
+        new_thread = threading.Thread(target=link_one_tuple_missing,args=(f,registreB,BooleanA,idB,beta,G,Total_idA))
         jobs.append(new_thread)
 
     for job in jobs:
