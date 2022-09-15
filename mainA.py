@@ -86,6 +86,13 @@ def receiveUplet(s):
         i+=1
     return uplet
 
+def receiveNumberOfUplet(s):
+
+    uplet = s.recv(128).decode()
+    s.sendall(b'ok')
+
+    return uplet
+
 
 # def receiveUpletPoint():
 #     upletX = []
@@ -143,7 +150,7 @@ def splitXY(uplet) :
 #         s.sendall(json_data.encode())
 #         ok = s.recv(16)
 
-batch = 50 #5000
+batch = 5000 #5000
 batch_size = 100
 
 
@@ -491,7 +498,7 @@ def create_one_tuple_missing(f,registreA,G):
 
 def createTupleA(dataset_A):
 
-    numberOfTuple = receiveUplet(s)
+    numberOfTuple = int(receiveNumberOfUplet(s))
     jobs = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreA = extratingData(dataset_A)

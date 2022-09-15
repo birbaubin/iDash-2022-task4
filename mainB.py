@@ -16,6 +16,9 @@ start = time.perf_counter()
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('integers', metavar='N', type=int, nargs='+', help='an integer for the accumulator')
+parser.add_argument('--sum', dest='accumulate', action='store_const',
+                    const=sum, default=max,
+                    help='sum the integers (default: find the max)')
 args = parser.parse_args()
 # dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
@@ -33,7 +36,8 @@ c, addr = sock.accept()     # Establish connection with client.
 print('Got connection from ', addr)
 Total_idA = []
 
-numberOfTuple = args[1] #Variable à prendre en paramètre
+
+numberOfTuple = int(args.accumulate(args.integers)) #Variable à prendre en paramètre
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
     numberOfTuple=14
@@ -58,7 +62,7 @@ def reconstructPointFromXY(upletX,upletY):
     return uplet
 
 
-batch = 50 #5000
+batch = 5000 #5000
 # def receiveUplet():
 #     uplet = []
 #     for i in range(batch):
@@ -167,7 +171,13 @@ def sendUplet(uplet, s):
     json_data = json.dumps({str(i): "end"})
     s.sendall(json_data.encode())
 
+def sendNumberOfUplet(uplet, s):
 
+
+    s.sendall(str(uplet).encode())
+
+
+    s.recv(16)
 # def sendUpletPoint(uplet):
 #     upletX,upletY = splitXY(uplet)
 #     for i in range(batch):
@@ -526,7 +536,7 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA):
 
 def linkage(dataset_B):
     #get the tuple from A
-    sendUplet(numberOfTuple, c)
+    sendNumberOfUplet(numberOfTuple, c)
     jobs = []
     tupleListA = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
