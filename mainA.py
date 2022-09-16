@@ -10,21 +10,28 @@ import argparse
 import threading
 
 from Crypto.PublicKey import ECC
+
+port = 18345
+port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port2 = [19376, 19346, 19347, 19348, 19349, 19350]
+
+
 #starting a clock at the beginning of the program
 start = time.perf_counter()
 #fetching the name of the file of dataset A from command line
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('-d', type=str, help='Path to dataset')
+parser.add_argument('-ipB', type=str, help='IP adress of B')
 args = parser.parse_args()
 
 dataset_A = pd.read_csv(args.d)  # Opening dataset A with the name we just got from the parser
+host = args.ipB
 
 alpha = secrets.randbits(256) #generation of alpha for the private set intersection.
 s = socket.socket()        # Create a socket object
-host = socket.gethostbyname("") # Get local machine name
-port = 18345
-port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
-port2 = [19376, 19346, 19347, 19348, 19349, 19350]
+# host = socket.gethostbyname("") # Get local machine name
+# print(type(host))
+
 
 s.connect((host, port))
 
@@ -294,10 +301,10 @@ def timer(commit):
 def create_one_tuple(f,registreA,G,empty):
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
-    port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+    # port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
 
     sock = socket.socket()
-    host = socket.gethostbyname("")
+    # host = socket.gethostbyname("")
     port = port1[f]
 
     stop = False
@@ -357,7 +364,7 @@ def create_one_tuple_missing(f,registreA,G,empty):
     missing = [4,4,4,3,3,3]
 
     sock = socket.socket()
-    host = socket.gethostbyname("")
+    # host = socket.gethostbyname("")
     port = port2[f]
 
     stop = False

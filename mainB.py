@@ -10,6 +10,9 @@ import threading
 
 from Crypto.PublicKey import ECC
 
+port = 18345
+port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port2 = [19376, 19346, 19347, 19348, 19349, 19350]
 
 
 start = time.perf_counter()
@@ -17,17 +20,19 @@ start = time.perf_counter()
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('-n', type=int, help='The number of uplet processed')
 parser.add_argument('-d', type=str, help='Path to dataset')
+# parser.add_argument('-ipA', type=str, help='IP adress of A')
+
 args = parser.parse_args()
 dataset_B = pd.read_csv(args.d)
+# host = args.ipA
 beta = secrets.randbits(256)
 
 p = ECC._curves['p256'].p
 order = int(ECC._curves['p256'].order)
 sock = socket.socket()
+# host = socket.gethostbyaddr(ipA)
 host = socket.gethostbyname("")
-port = 18345
-port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
-port2 = [19376, 19346, 19347, 19348, 19349, 19350]
+# print(host)
 sock.bind((host, port))
 sock.listen(5)
 c, addr = sock.accept()     # Establish connection with client.
@@ -315,6 +320,7 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
     sock = socket.socket()
     host = socket.gethostbyname("")
+    # print(host)
     port = port1[f]
     print("Current port : ", port)
     sock.bind((host, port))
