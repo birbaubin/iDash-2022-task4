@@ -38,7 +38,7 @@ while not stop:
         s.connect((host, port))    # Establish connection with client.
         stop = True
     except Exception:
-        #print("Trying to reconnect...")
+            #print("Trying to reconnect...")
         time.sleep(1)
 
 
@@ -205,7 +205,7 @@ def extratingData(dataset):
         missing.append(0)
         missingCount.append(0)
 
-    registre = [np.array(fName), np.array(lName), np.array(bDay), np.array(mail), np.array(phone), np.array(address), np.array(SSN), np.array(missing), np.array(boolean), np.array(missingCount)]
+    registre = [np.array(fName), np.array(lName), np.array(bDay), np.array(mail), np.array(phone), np.array(address), np.array(SSN), np.array(missing), np.array(boolean), np.array(missingCount)] 
     empty = getEmpty(registre)
     for i in range(len(missing)):
         missing = 0
@@ -430,7 +430,7 @@ def createTupleA(dataset_A):
 
     for job in jobs:
         job.start()
-
+    
     for job in jobs:
         job.join()
 

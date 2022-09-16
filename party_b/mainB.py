@@ -105,9 +105,9 @@ def splitXY(uplet) :
     for P in uplet:
         upletX.append(str(P.x))
         upletY.append(str(P.y))
-
+    
     return upletX, upletY
-
+    
 
 def sendUplet(uplet, s):
 
@@ -173,7 +173,7 @@ def sendIdA(idA,c):
         else:
             json_data = json.dumps({str(i): newIdA[i*1000:i*1000+1000]})
             c.sendall(json_data.encode())
-
+            
         c.recv(16)
         i+=1
 
@@ -256,7 +256,7 @@ def creatingTuple3(registre, tuple,G,empty):
             yi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16)
             Qi = yi*G
             uplet.append(beta*Qi)
-
+            
     return(uplet)
 
 def creatingTupleMissing2(registre, tuple,missingCount,G,empty):
@@ -334,7 +334,7 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
     #send upletB to A
     sendUpletPoint(upletB,c) # peut être à changer pour ECC
-
+    
     invBeta = pow(beta, order-2 ,order) # a voir ECC
 
     #get the tupleB from A
@@ -344,9 +344,9 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     idA = []  # The list that will save the ID of new linked elements of A
     for i in range(len(tupleListB)):
         if (tupleListB[i].is_point_at_infinity() == False):
-            ri = tupleListB[i]
-            fi = invBeta*ri
-            tupleListB[i] = hashPoint(fi)
+            ri = tupleListB[i] 
+            fi = invBeta*ri 
+            tupleListB[i] = hashPoint(fi) 
         else :
             tupleListB[i] = ""
 
@@ -396,7 +396,7 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     for i in range(len(tupleListB)):
         if (tupleListB[i].is_point_at_infinity() == False):
             ri = tupleListB[i]
-            fi = invBeta*ri
+            fi = invBeta*ri 
             tupleListB[i] = hashPoint(fi)
         else :
             tupleListB[i] = ""
@@ -451,7 +451,7 @@ def linkage(dataset_B):
 
     for job in jobs:
         job.start()
-
+    
     for job in jobs:
         job.join()
 
