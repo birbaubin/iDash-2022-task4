@@ -26,10 +26,10 @@ dataset_B = pd.read_csv(args.d)
 beta = secrets.randbits(256)#choose the security value
 
 p = ECC._curves['p256'].p
-order = ECC._curves['p256'].order
+order = int(ECC._curves['p256'].order)
 sock = socket.socket()
 host = socket.gethostbyname("")
-port = 12345
+port = 18345
 sock.bind((host, port))
 sock.listen(5)
 c, addr = sock.accept()     # Establish connection with client.
@@ -38,7 +38,6 @@ Total_idA = []
 
 numberOfTuple = args.n
 # numberOfTuple = int(args.accumulate(args.integers)) #Variable à prendre en paramètre
-print(numberOfTuple)
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
     numberOfTuple=14
@@ -331,11 +330,11 @@ def creatingTupleMissing2(registre, tuple,missingCount,G,empty):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
             uplet.append(G.point_at_infinity())
         else:
-            yi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16)
+            yi = int(hashlib.sha256((registre[tuple[0]][k] + str(registre[tuple[1]][k])).encode('utf-8')).hexdigest(),16)
             # tranformer yi en Qi puis calcul betaQi
             Qi = yi*G
             uplet.append(beta*Qi)
-            return(uplet)
+    return(uplet)
 
 def creatingTupleMissing3(registre, tuple,missingCount,G,empty):
 
@@ -344,10 +343,10 @@ def creatingTupleMissing3(registre, tuple,missingCount,G,empty):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
             uplet.append(G.point_at_infinity())
         else:
-            yi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16)
+            yi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +str(registre[tuple[2]][k])).encode('utf-8')).hexdigest(),16)
             Qi = yi*G
             uplet.append(beta*Qi)
-            return(uplet)
+    return(uplet)
 
 def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
     indexA = np.argsort(upletA) #Sorting the hashes while keeping in memory the ID of the hashes
@@ -357,12 +356,13 @@ def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
 
 
     l = 0
-    sizeofdataset = 500000 #5000
+    sizeofdataset = len(BooleanB) #5000
     for k in range(0, sizeofdataset, 1):  # Efficient comparison of sorted list
         if not upletA[k] == "":  # verifying that the k-th tuple wasn't already linked or that one of its component was empty
             while l < sizeofdataset and upletA[k] > upletB[l]:
                 l += 1
             if l < sizeofdataset and upletA[k] == upletB[l]:  # if the hashes are equals, the IDs are linked
+
                 # idA.append(indexA[k] + 2)  # we add the ID to the lists of linked IDs
                 # idB.append(indexB[l] + 2)
                 idA.append(indexA[k])  # we add the ID to the lists of linked IDs
@@ -382,7 +382,7 @@ def timer(commit):
 def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
     
-    ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000]
+    ports = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
     sock = socket.socket()
     host = socket.gethostbyname("")
     port = ports[f]
@@ -459,7 +459,7 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
 
-    ports = [13376, 13346, 13347, 13348, 13349, 13350] #Choisir d'autres ports
+    ports = [19376, 19346, 19347, 19348, 19349, 19350] #Choisir d'autres ports
     sock = socket.socket()
     host = socket.gethostbyname("")
     port = ports[f]
@@ -473,7 +473,7 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     missing = [4,4,4,3,3,3]
 
     num_thread = threading.get_ident()
-    print("######### Tuple number ", f + 1, "###########", num_thread)
+    print("######### Tuple number ", f + 9, "###########", num_thread)
     timer("Begin of receiving UpletA")
     tupleListA = receiveUplet(c)
     timer("End of receiving UpletA")
@@ -495,6 +495,7 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     timer("Begin of sending UpletB")
     sendUpletPoint(upletB,c) # peut être à changer pour ECC
     timer("End of sending UpletB")
+
     # print(time.perf_counter() - start, " : 2/4 : y^beta sent ")
 
     invBeta = pow(beta, order-2 ,order) # a voir ECC

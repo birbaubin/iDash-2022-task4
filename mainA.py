@@ -24,7 +24,7 @@ dataset_A = pd.read_csv(args.d)  # Opening dataset A
 alpha = secrets.randbits(256) #choose the security value
 s = socket.socket()        # Create a socket object
 host = socket.gethostbyname("") # Get local machine name
-port = 12345
+port = 18345
 s.connect((host, port))
 
 # def receiveParams():
@@ -337,7 +337,7 @@ def creatingTupleMissing2(registre, tuple,missingCount,G,empty):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
             uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked or with less than missingCount missing values
         else:
-            xi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16) # transformer xi en Pi
+            xi = int(hashlib.sha256((registre[tuple[0]][k] + str(registre[tuple[1]][k])).encode('utf-8')).hexdigest(),16) # transformer xi en Pi
             Pi = xi*G
             xialpha = alpha*Pi # alpha*Pi
             uplet.append(hashPoint(xialpha)) #H(alphaPi) = H(alphaPi.n || alphaPi.m)
@@ -350,7 +350,7 @@ def creatingTupleMissing3(registre, tuple,missingCount,G,empty):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k] or registre[9][k] < missingCount:
             uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked
         else:
-            xi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16)
+            xi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] + str(registre[tuple[2]][k])).encode('utf-8')).hexdigest(),16)
             Pi = xi*G
             xialpha = alpha*Pi
             uplet.append(hashPoint(xialpha)) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
@@ -379,7 +379,7 @@ def create_one_tuple(f,registreA,G,empty):
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
     #list = np.array([[0, 1,2], [0, 1,5], [1,3]])
-    ports = [12376, 12346, 12347, 12348, 12349, 15000, 17000, 14000]
+    ports = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
 
     sock = socket.socket()
     host = socket.gethostbyname("")
@@ -441,7 +441,7 @@ def create_one_tuple_missing(f,registreA,G,empty):
 
     list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3]
-    ports = [13376, 13346, 13347, 13348, 13349, 13350] #changer les ports
+    ports = [19376, 19346, 19347, 19348, 19349, 19350] #changer les ports
 
     sock = socket.socket()
     host = socket.gethostbyname("")
@@ -459,7 +459,7 @@ def create_one_tuple_missing(f,registreA,G,empty):
             time.sleep(1)
 
     num_thread = threading.get_ident()
-    print("######### Tuple number ", f + 1, "########### for ", num_thread)
+    print("######### Tuple number ", f + 9, "########### for ", num_thread)
     timer("Begin of constructing UpletA")
     if len(list[f]) == 2:
         upletA = creatingTupleMissing2(registreA,list[f],missing[f],G,empty)
