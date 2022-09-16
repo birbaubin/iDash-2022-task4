@@ -10,45 +10,29 @@ import argparse
 import threading
 
 from Crypto.PublicKey import ECC
-
+#starting a clock at the beginning of the program
+start = time.perf_counter()
+#fetching the name of the file of dataset A from command line
 parser = argparse.ArgumentParser(description='Process some integers.')
-# parser.add_argument('integers', metavar='N', type=int, nargs='+', help='an integer for the accumulator')
 parser.add_argument('-d', type=str, help='Path to dataset')
 args = parser.parse_args()
 
-start = time.perf_counter()
-# dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
-# dataset_A = pd.read_csv("dataAEn.csv")  # Opening dataset A
-dataset_A = pd.read_csv(args.d)  # Opening dataset A
+dataset_A = pd.read_csv(args.d)  # Opening dataset A with the name we just got from the parser
 
-alpha = secrets.randbits(256) #choose the security value
+alpha = secrets.randbits(256) #generation of alpha for the private set intersection.
 s = socket.socket()        # Create a socket object
 host = socket.gethostbyname("") # Get local machine name
 port = 18345
+port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port2 = [19376, 19346, 19347, 19348, 19349, 19350]
+
 s.connect((host, port))
 
-# def receiveParams():
-#     result = s.recv(1024)
-#     json_data = json.loads(result.decode())
-#     p = json_data.get("p")
-#     q = json_data.get("q")
-#     print(time.perf_counter() - start, " : Parameters received : p=", p, " q=", q)
-#     return p, q
-
-
+#A function that transform a point into a hash
 def hashPoint(P):
     return hashlib.sha256((str(P.x) + str(P.y)).encode('utf-8')).hexdigest()
 
-
-# def receiveParams():
-#     result = s.recv(1024)
-#     json_data = json.loads(result.decode())
-#     p = json_data.get("p")
-#     print(time.perf_counter() - start, " : Parameters received : p=", p)
-#     return p
-
-# p = receiveParams()
-
+#A function to reconstruct a point from two integers
 def reconstructPointFromXY(upletX,upletY):
     uplet = []
     for (x,y) in zip(upletX,upletY) :
@@ -56,23 +40,7 @@ def reconstructPointFromXY(upletX,upletY):
         uplet.append(P)
     return uplet
 
-
-
-
-
-
-# def receiveUplet():
-#     uplet = []
-#     for i in range(batch):
-#         # print(i)
-#         result = s.recv(1048576)
-#         # print(result)
-#         json_data = json.loads(result.decode())
-#         uplet = uplet + json_data.get(str(i))
-#         s.sendall(b'ok')
-#     return uplet
-
-
+#A function to receive the tuples from B
 def receiveUplet(s):
     uplet = []
     end = False
@@ -91,6 +59,7 @@ def receiveUplet(s):
         i+=1
     return uplet
 
+#A function to receive the number of tuples that will be considered from B
 def receiveNumberOfUplet(s):
 
     uplet = s.recv(128).decode()
@@ -98,23 +67,7 @@ def receiveNumberOfUplet(s):
 
     return uplet
 
-
-# def receiveUpletPoint():
-#     upletX = []
-#     upletY = []
-#     for i in range(batch):
-#         # print(i)
-#         result = s.recv(1048576)
-#         # print(result)
-#         json_data = json.loads(result.decode())
-#         upletX = upletX + json_data.get('x')
-#         upletY = upletY + json_data.get('y')
-#         s.sendall(b'ok')
-    
-#     uplet = reconstructPointFromXY(upletX,upletY)
-#     return uplet
-
-
+#A function to receive a list of points (A tuple with the format of points from the ECC) from B
 def receiveUpletPoint(s):
     upletX = []
     upletY = []
@@ -134,7 +87,7 @@ def receiveUpletPoint(s):
     uplet = reconstructPointFromXY(upletX,upletY)
     return uplet
 
-
+#A function that get a point and return its coordinates as integers
 def splitXY(uplet) :
     upletX = []
     upletY = []
@@ -143,23 +96,11 @@ def splitXY(uplet) :
         upletY.append(str(P.y))
     return upletX, upletY
 
-
-
-
-# def sendUplet(uplet):
-#     for i in range(batch):
-#         #send upletA to B
-#         # print(upletA)
-#         json_data = json.dumps({str(i): uplet[i*100:i*100+100]})
-#         # print(json_data.encode())
-#         s.sendall(json_data.encode())
-#         ok = s.recv(16)
-
+#EST CE UTILE ENCORE ??
 batch = 5000 #5000
 batch_size = 100
 
-
-
+#A function to send a tuple to B
 def sendUplet(uplet, s):
 
     end = False
@@ -185,6 +126,7 @@ def sendUplet(uplet, s):
     json_data = json.dumps({str(i): "end"})
     s.sendall(json_data.encode())
 
+#A function to send a list of points to B
 def sendUpletPoint(uplet, s):
 
     upletX,upletY = splitXY(uplet)
@@ -204,18 +146,7 @@ def sendUpletPoint(uplet, s):
     json_data = json.dumps({'x': "end"})
     s.sendall(json_data.encode())
 
-
-# def sendUpletPoint(uplet):
-#     upletX,upletY = splitXY(uplet)
-#     for i in range(batch):
-#         #send upletA to B
-#         # print(upletA)
-        
-#         json_data = json.dumps({'x': upletX[i*100:i*100+100], 'y' : upletY[i*100:i*100+100]})
-#         # print(json_data.encode())
-#         s.sendall(json_data.encode())
-#         ok = s.recv(16)
-
+#A function to receive a list of the still permutated linked IdA from A
 def receiveIdA(s):
 
     array = []
@@ -223,7 +154,6 @@ def receiveIdA(s):
     i = 0
     while not end:
         result = s.recv(1048576)
-        # print(result)
         json_data = json.loads(result.decode())
         id = json_data.get(str(i))
         if id != "end":
@@ -237,15 +167,7 @@ def receiveIdA(s):
 
     return array
 
-    # result = s.recv(419430400)
-    # print(result)
-    # json_data = json.loads(result.decode())
-    # id = json_data.get(str("idA"))
-    #
-    # return id
-
-
-
+#A function to extract the data from the datasets
 def extratingData(dataset):
     fName = []  # first name of Dataset
     lName = []  # last name of Dataset
@@ -303,10 +225,7 @@ def creatingTuple2(registre, tuple,G,empty):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty  or registre[8][k]:
             uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked
         else:
-            # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
-            # xi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16) # transformer xi en Pi
-            # xialpha = str(pow(xi,alpha,p)).encode('utf-8') # alpha*Pi
-            # uplet.append(hashlib.sha256(xialpha).hexdigest()) #H(alphaPi) = H(alphaPi.n || alphaPi.m)
+
             xi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16) # transformer xi en Pi
             Pi = xi*G
             xialpha = alpha*Pi # alpha*Pi
@@ -319,9 +238,6 @@ def creatingTuple3(registre, tuple,G,empty):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k]:
             uplet.append("")  # Completion of the tuple array, checking if it is not empty or already linked
         else:
-
-            
-            # uplet.append(hashlib.sha256(str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),alpha,p)).encode('utf-8')).hexdigest()) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
             xi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16)
             Pi = xi*G
             xialpha = alpha*Pi
@@ -378,12 +294,11 @@ def timer(commit):
 def create_one_tuple(f,registreA,G,empty):
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
-    #list = np.array([[0, 1,2], [0, 1,5], [1,3]])
-    ports = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+    port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
 
     sock = socket.socket()
     host = socket.gethostbyname("")
-    port = ports[f]
+    port = port1[f]
 
     stop = False
 
@@ -435,17 +350,15 @@ def create_one_tuple(f,registreA,G,empty):
 
     for i in range(len(idA)):
         registreA[8][int(idA[i])] = True
-    # registreA[8] = registreA[8][unshuf_order] # Unshuffle the shuffled data
 
 def create_one_tuple_missing(f,registreA,G,empty):
 
     list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3]
-    ports = [19376, 19346, 19347, 19348, 19349, 19350] #changer les ports
 
     sock = socket.socket()
     host = socket.gethostbyname("")
-    port = ports[f]
+    port = port2[f]
 
     stop = False
 
@@ -497,7 +410,6 @@ def create_one_tuple_missing(f,registreA,G,empty):
 
     for i in range(len(idA)):
         registreA[8][int(idA[i])] = True
-    # registreA[8] = registreA[8][unshuf_order] # Unshuffle the shuffled data
 
 def getEmpty(registreA):
     empty =""
@@ -516,9 +428,6 @@ def createTupleA(dataset_A):
     empty=getEmpty(registreA)
     unshuf_order = shuffling(registreA)
 
-    
-    list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
-    #list = np.array([[0, 1,2], [0, 1,5], [1,3]])
     G = ECC.EccPoint(ECC._curves['p256'].Gx,ECC._curves['p256'].Gy,"p256")
 
     if numberOfTuple < 9:
@@ -543,14 +452,6 @@ def createTupleA(dataset_A):
     
     for job in jobs:
         job.join()
-
-    #get idA from B
-    # timer("Begin of receiving Total_IdA")
-    # idA  = receiveIdA()
-    # timer("End of receiving Total_IdA")
-
-    # for i in range(len(idA)):
-    #     registreA[8][int(idA[i])] = True
 
     registreA[8] = registreA[8][unshuf_order] # Unshuffle the shuffled data
     C = {'Value': registreA[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset A. True means linked, False the opposite

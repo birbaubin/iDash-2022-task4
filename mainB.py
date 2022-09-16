@@ -15,21 +15,19 @@ from Crypto.PublicKey import ECC
 start = time.perf_counter()
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-# parser.add_argument('integers', metavar='N', type=int, nargs='+', help='an integer for the accumulator')
 parser.add_argument('-n', type=int, help='The number of uplet processed')
 parser.add_argument('-d', type=str, help='Path to dataset')
 args = parser.parse_args()
-# dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
-# dataset_B = pd.read_csv("dataBEn.csv")  # Opening dataset B
 dataset_B = pd.read_csv(args.d)
-# size_q = 256 #choose the security value
-beta = secrets.randbits(256)#choose the security value
+beta = secrets.randbits(256)
 
 p = ECC._curves['p256'].p
 order = int(ECC._curves['p256'].order)
 sock = socket.socket()
 host = socket.gethostbyname("")
 port = 18345
+port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port2 = [19376, 19346, 19347, 19348, 19349, 19350]
 sock.bind((host, port))
 sock.listen(5)
 c, addr = sock.accept()     # Establish connection with client.
@@ -37,7 +35,6 @@ print('Got connection from ', addr)
 Total_idA = []
 
 numberOfTuple = args.n
-# numberOfTuple = int(args.accumulate(args.integers)) #Variable à prendre en paramètre
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
     numberOfTuple=14
@@ -61,17 +58,8 @@ def reconstructPointFromXY(upletX,upletY):
         uplet.append(P)
     return uplet
 
-
+#EST-CE UTILE ??
 batch = 5000 #5000
-# def receiveUplet():
-#     uplet = []
-#     for i in range(batch):
-#         result = c.recv(1048576)
-#         json_data = json.loads(result.decode())
-#         uplet = uplet + json_data.get(str(i))
-#         c.sendall(b'ok')
-
-#     return uplet
 
 def receiveUplet(s):
     uplet = []
@@ -79,7 +67,6 @@ def receiveUplet(s):
     i = 0
     while not end:
         result = s.recv(1048576)
-        # print(result)
         json_data = json.loads(result.decode())
         id = json_data.get(str(i))
 
@@ -90,21 +77,6 @@ def receiveUplet(s):
             end = True
         i+=1
     return uplet
-
-# def receiveUpletPoint():
-#     upletX = []
-#     upletY = []
-#     for i in range(batch):
-#         # print(i)
-#         result = c.recv(1048576)
-#         # print(result)
-#         json_data = json.loads(result.decode())
-#         upletX = upletX + json_data.get('x')
-#         upletY = upletY + json_data.get('y')
-#         c.sendall(b'ok')
-    
-#     uplet = reconstructPointFromXY(upletX,upletY)
-#     return uplet
 
 def receiveUpletPoint(s):
     upletX = []
@@ -134,16 +106,7 @@ def splitXY(uplet) :
         upletY.append(str(P.y))
     
     return upletX, upletY
-
-
-# def sendUplet(uplet):
-#     for i in range(batch):
-#         #send upletA to B
-#         # print(upletA)
-#         json_data = json.dumps({str(i): uplet[i*100:i*100+100]})
-#         # print(json_data.encode())
-#         c.sendall(json_data.encode())
-#         ok = c.recv(16)
+#EST CE UTILE ??
 batch_size = 100
 
 def sendUplet(uplet, s):
@@ -156,7 +119,6 @@ def sendUplet(uplet, s):
 
     while not end:
         if i*batch_size+batch_size >= len(newUplet):
-            # print("end")
             end = True
             json_data = json.dumps({str(i): newUplet[i*batch_size:len(newUplet)]})
             s.sendall(json_data.encode())
@@ -172,22 +134,8 @@ def sendUplet(uplet, s):
     s.sendall(json_data.encode())
 
 def sendNumberOfUplet(uplet, s):
-
-
     s.sendall(str(uplet).encode())
-
-
     s.recv(16)
-# def sendUpletPoint(uplet):
-#     upletX,upletY = splitXY(uplet)
-#     for i in range(batch):
-#         #send upletA to B
-#         # print(upletA)
-        
-#         json_data = json.dumps({'x': upletX[i*100:i*100+100], 'y' : upletY[i*100:i*100+100]})
-#         # print(json_data.encode())
-#         c.sendall(json_data.encode())
-#         ok = c.recv(16)
 
 def sendUpletPoint(uplet, s):
 
@@ -208,9 +156,6 @@ def sendUpletPoint(uplet, s):
     json_data = json.dumps({'x': "end"})
     s.sendall(json_data.encode())
 
-
-
-
 def sendIdA(idA,c):
     end = False
     i = 0
@@ -219,10 +164,8 @@ def sendIdA(idA,c):
         newIdA.append(str(id))
 
     while not end:
-        #time.sleep(0.005)
 
         if i*1000+1000 >= len(idA):
-            # print("end")
             end = True
             json_data = json.dumps({str(i): newIdA[i*1000:len(newIdA)]})
             c.sendall(json_data.encode())
@@ -233,7 +176,6 @@ def sendIdA(idA,c):
         c.recv(16)
         i+=1
 
-    #time.sleep(0.005)
     json_data = json.dumps({str(i): "end"})
     c.sendall(json_data.encode())
     c.recv(16)
@@ -298,11 +240,8 @@ def creatingTuple2(registre, tuple, G,empty):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[8][k]:
             uplet.append(G.point_at_infinity())  # Completion of the tuple array, checking if it is not empty or already linked
         else:
-            # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
-            # uplet.append((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16),beta,p))).encode('utf-8'))
             yi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k]).encode('utf-8')).hexdigest(),16)
             # uplet.append(pow(yi,beta,p))
-
             # tranformer yi en Qi puis calcul betaQi
             Qi = yi*G
             uplet.append(beta*Qi)
@@ -314,10 +253,7 @@ def creatingTuple3(registre, tuple,G,empty):
         if registre[tuple[0]][k] == empty or registre[tuple[1]][k] == empty or registre[tuple[2]][k] == empty or registre[8][k]:
             uplet.append(G.point_at_infinity())  # Completion of the tuple array, checking if it is not empty or already linked
         else:
-            # uplet.append((str(pow(int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16),beta,p))).encode('utf-8')) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
             yi = int(hashlib.sha256((registre[tuple[0]][k] + registre[tuple[1]][k] +registre[tuple[2]][k]).encode('utf-8')).hexdigest(),16)
-            # uplet.append(pow(yi,beta,p)) # if the tuple is not empty or already linked, we concatenate its component and hash the concatenation
-
             Qi = yi*G
             uplet.append(beta*Qi)
             
@@ -356,15 +292,12 @@ def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
 
 
     l = 0
-    sizeofdataset = len(BooleanB) #5000
+    sizeofdataset = len(BooleanB)
     for k in range(0, sizeofdataset, 1):  # Efficient comparison of sorted list
         if not upletA[k] == "":  # verifying that the k-th tuple wasn't already linked or that one of its component was empty
             while l < sizeofdataset and upletA[k] > upletB[l]:
                 l += 1
             if l < sizeofdataset and upletA[k] == upletB[l]:  # if the hashes are equals, the IDs are linked
-
-                # idA.append(indexA[k] + 2)  # we add the ID to the lists of linked IDs
-                # idB.append(indexB[l] + 2)
                 idA.append(indexA[k])  # we add the ID to the lists of linked IDs
                 idB.append(indexB[l])
                 BooleanA[indexA[k]] = True  # We set the ID as already linked
@@ -372,20 +305,17 @@ def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
                 l += 1
     return
 
-
 def timer(commit):
     print(time.perf_counter() - start, commit)
-
-
 
 
 def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
     
-    ports = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+    port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
     sock = socket.socket()
     host = socket.gethostbyname("")
-    port = ports[f]
+    port = port1[f]
     print("Current port : ", port)
     sock.bind((host, port))
     sock.listen(5)
@@ -393,7 +323,6 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     print('Got connection from ', addr)
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
-    #list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6]])
 
     num_thread = threading.get_ident()
     print("######### Tuple number ", f + 1, "###########", num_thread)
@@ -433,7 +362,6 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     idA = []  # The list that will save the ID of new linked elements of A
     for i in range(len(tupleListB)):
         if (tupleListB[i].is_point_at_infinity() == False):
-            # à changer en ECC
             ri = tupleListB[i] # Ri
             fi = invBeta*ri #Ri^invBeta
             tupleListB[i] = hashPoint(fi) #h(Fi_m||Fi_n)
@@ -443,7 +371,6 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     # here tupleListB is a list of hash of point
 
 
-    # for i in range(len(tupleListB)):
     timer("Begin of comparison")
     compareTuple(tupleListA,tupleListB,idA,idB,BooleanA,registreB[8])
     timer("End of comparison")
@@ -453,16 +380,15 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     timer("Begin of sending idA")
     sendIdA(idA,c)
     timer("End of sending idA")
-    # Total_idA = Total_idA + idA
     print("Number of linked records for this tuple : ", len(idA))
 
 def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
 
-    ports = [19376, 19346, 19347, 19348, 19349, 19350] #Choisir d'autres ports
+    port2 = [19376, 19346, 19347, 19348, 19349, 19350]
     sock = socket.socket()
     host = socket.gethostbyname("")
-    port = ports[f]
+    port = port2[f]
     print("Current port : ", port)
     sock.bind((host, port))
     sock.listen(5)
@@ -511,7 +437,6 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     idA = []  # The list that will save the ID of new linked elements of A
     for i in range(len(tupleListB)):
         if (tupleListB[i].is_point_at_infinity() == False):
-            # à changer en ECC
             ri = tupleListB[i] # Ri
             fi = invBeta*ri #Ri^invBeta
             tupleListB[i] = hashPoint(fi) #h(Fi_m||Fi_n)
@@ -544,19 +469,15 @@ def getEmpty(registreB):
 
 
 def linkage(dataset_B):
-    #get the tuple from A
     sendNumberOfUplet(numberOfTuple, c)
 
     jobs = []
-    tupleListA = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreB = extratingData(dataset_B)
     timer("temps get empty begin")
     empty=getEmpty(registreB)
     timer("temps get empty end")
 
-    list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]])
-    #list = np.array([[0, 1,2], [0, 1,5], [1,3],[1,6]])
     G = ECC.EccPoint(ECC._curves['p256'].Gx,ECC._curves['p256'].Gy,"p256")
 
     idB = [] # The list that will save the ID of linked elements of B
@@ -589,17 +510,10 @@ def linkage(dataset_B):
     
     for job in jobs:
         job.join()
-    
-
-
-    #timer("Begin of sending Total_idA")
-    #sendIdA(Total_idA)
-    #timer("Begin of sending Total_idA")
 
     C = {'Value': registreB[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset B. True means linked, False the opposite
     donnees = pd.DataFrame(C, columns=['Value'])
     donnees.to_csv('OutputB.csv', index=False, header=True, encoding='utf-8', sep=';')
-
 
 linkage(dataset_B)
 
