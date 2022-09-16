@@ -37,7 +37,7 @@ sock.listen(5)
 c, addr = sock.accept()     # Establish connection with client.
 print('Got connection from ', addr)
 Total_idA = []
-batch_size = 50
+batch_size = 40
 
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
@@ -292,12 +292,13 @@ def compareTuple(upletA, upletB, idA, idB, BooleanA, BooleanB):
 
 
     l = 0
-    sizeofdataset = len(BooleanB)
-    for k in range(0, sizeofdataset, 1):  # Efficient comparison of sorted list
+    sizeofdatasetB = len(BooleanB)
+    sizeofdatasetA = len(BooleanA)
+    for k in range(0, sizeofdatasetA, 1):  # Efficient comparison of sorted list
         if not upletA[k] == "":  # verifying that the k-th tuple wasn't already linked or that one of its component was empty
-            while l < sizeofdataset and upletA[k] > upletB[l]:
+            while l < sizeofdatasetB and upletA[k] > upletB[l]:
                 l += 1
-            if l < sizeofdataset and upletA[k] == upletB[l]:  # if the hashes are equals, the IDs are linked
+            if l < sizeofdatasetB and upletA[k] == upletB[l]:  # if the hashes are equals, the IDs are linked
                 idA.append(indexA[k])  # we add the ID to the lists of linked IDs
                 idB.append(indexB[l])
                 BooleanA[indexA[k]] = True  # We set the ID as already linked
@@ -324,6 +325,10 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
     num_thread = threading.get_ident()
     tupleListA = receiveUplet(c)
+
+    BooleanA = []
+    for i in range(len(tupleListA)):
+        BooleanA.append(False)
 
 
     if len(list[f]) == 2:
