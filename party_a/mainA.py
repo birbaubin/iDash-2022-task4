@@ -43,7 +43,7 @@ while not stop:
 
 
 #s.connect((host, port))
-batch_size = 50
+batch_size = 40
 
 #A function that transform a point into a hash
 def hashPoint(P):
