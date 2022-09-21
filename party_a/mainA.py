@@ -12,8 +12,8 @@ import threading
 from Crypto.PublicKey import ECC
 
 
-port = 12345
-port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port = 10000
+port1 = [10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008]
 port2 = [19376, 19346, 19347, 19348, 19349, 19350]
 
 
@@ -36,14 +36,15 @@ while not stop:
     try:
         host = socket.gethostbyname("party_b")
         s.connect((host, port))    # Establish connection with client.
+        print("Connected to ", host,';', port)
         stop = True
     except Exception:
-            #print("Trying to reconnect...")
+        print("Trying to reconnect...")
         time.sleep(1)
 
 
 #s.connect((host, port))
-batch_size = 50
+batch_size = 5
 
 #A function that transform a point into a hash
 def hashPoint(P):
@@ -154,7 +155,7 @@ def sendUpletPoint(uplet, s):
             json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
             s.sendall(json_data.encode())
 
-        s.recv(16)
+        s.recv(32)
         i+=1
     json_data = json.dumps({'x': "end"})
     s.sendall(json_data.encode())
@@ -314,9 +315,10 @@ def create_one_tuple(f,registreA,G,empty):
     while not stop:
         try:
             sock.connect((host, port))    # Establish connection with client.
+            print("Connected to", host, ':', port)
             stop = True
         except Exception:
-            print("Trying to reconnect...")
+            print("Trying to reconnect to", host, ":", port)
             time.sleep(1)
 
     num_thread = threading.get_ident()
@@ -328,7 +330,6 @@ def create_one_tuple(f,registreA,G,empty):
 
 
     sendUplet(upletA,sock)
-
 
     #get tuple from B (y^beta)
     tuple = receiveUpletPoint(sock)
@@ -358,11 +359,11 @@ def create_one_tuple_missing(f,registreA,G,empty):
 
     while not stop:
         try:
-            print("Current port : ", port)
             sock.connect((host, port))    # Establish connection with client.
+            print("Connected to", host, ':', port)
             stop = True
         except Exception:
-            print("Trying to reconnect...")
+            print("Trying to reconnect to", host, ":", port)
             time.sleep(1)
 
     num_thread = threading.get_ident()
@@ -444,5 +445,4 @@ def createTupleA(dataset_A):
     s.close()
 
 createTupleA(dataset_A)
-
 
