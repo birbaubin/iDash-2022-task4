@@ -11,8 +11,8 @@ import threading
 from Crypto.PublicKey import ECC
 
 
-port = 12345
-port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port = 10000
+port1 = [10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008]
 port2 = [19376, 19346, 19347, 19348, 19349, 19350]
 
 
@@ -32,12 +32,13 @@ order = int(ECC._curves['p256'].order)
 
 sock = socket.socket()
 host = socket.gethostbyname("")
+
 sock.bind((host, port))
 sock.listen(5)
 c, addr = sock.accept()     # Establish connection with client.
 print('Got connection from ', addr)
 Total_idA = []
-batch_size = 50
+batch_size = 2
 
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
@@ -83,8 +84,11 @@ def receiveUpletPoint(s):
     upletX = []
     upletY = []
     end = False
+
+    it = 1
     while not end:
         result = s.recv(1048576)
+        #print(result)
         json_data = json.loads(result.decode())
         x = json_data.get('x')
         y = json_data.get('y')
@@ -95,6 +99,8 @@ def receiveUpletPoint(s):
             s.sendall(b'ok')
         else:
             end = True
+
+        it+=1
     uplet = reconstructPointFromXY(upletX,upletY)
     return uplet
 
@@ -103,6 +109,7 @@ def splitXY(uplet) :
     upletX = []
     upletY = []
     for P in uplet:
+
         upletX.append(str(P.x))
         upletY.append(str(P.y))
     
@@ -127,7 +134,6 @@ def sendUplet(uplet, s):
             s.sendall(json_data.encode())
 
         s.recv(16)
-
         i+=1
 
     json_data = json.dumps({str(i): "end"})
@@ -460,4 +466,3 @@ def linkage(dataset_B):
     donnees.to_csv('OutputB.csv', index=False, header=True, encoding='utf-8', sep=';')
 
 linkage(dataset_B)
-
