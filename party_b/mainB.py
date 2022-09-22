@@ -11,8 +11,8 @@ import threading
 from Crypto.PublicKey import ECC
 
 
-port = 12345
-port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port = 10000
+port1 = [10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008]
 port2 = [19376, 19346, 19347, 19348, 19349, 19350]
 
 
@@ -37,7 +37,7 @@ sock.listen(5)
 c, addr = sock.accept()     # Establish connection with client.
 print('Got connection from ', addr)
 Total_idA = []
-batch_size = 40
+batch_size = 2
 
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
@@ -99,6 +99,26 @@ def receiveUpletPoint(s):
     uplet = reconstructPointFromXY(upletX,upletY)
     return uplet
 
+# def receiveUpletPoint(s):
+#     upletX = []
+#     upletY = []
+#     end = False
+#     while not end:
+#         result = s.recv(1048576)
+#         # print(result)
+#         # print(result)
+#         data = json.loads(result.decode()).get('x')
+#         if data != "end":
+#             x = data
+#             y = json.loads(s.recv(1048576).decode()).get('y')
+#             upletX.append(x)
+#             upletY.append(y)
+#             print(x, y)
+#             s.sendall(b'ok')
+#         else:
+#             end = True
+#     uplet = reconstructPointFromXY(upletX,upletY)
+#     return uplet
 
 def splitXY(uplet) :
     upletX = []
@@ -137,7 +157,7 @@ def sendUplet(uplet, s):
 def sendNumberOfUplet(uplet, s):
     s.sendall(str(uplet).encode())
     s.recv(16)
-
+#
 def sendUpletPoint(uplet, s):
 
     upletX,upletY = splitXY(uplet)
@@ -156,6 +176,33 @@ def sendUpletPoint(uplet, s):
         i+=1
     json_data = json.dumps({'x': "end"})
     s.sendall(json_data.encode())
+
+# def sendUpletPoint(uplet, s):
+#
+#     upletX,upletY = splitXY(uplet)
+#     end = False
+#     i = 0
+#     while not end:
+#         if i*batch_size+batch_size >= len(upletX):
+#             end = True
+#             json_data = json.dumps({'x': upletX[i]})
+#             s.sendall(json_data.encode())
+#             s.recv(32)
+#             json_data = json.dumps({'y' : upletY[i]})
+#             s.sendall(json_data.encode())
+#             s.recv(32)
+#         else:
+#             json_data = json.dumps({'x': upletX[i]})
+#             s.sendall(json_data.encode())
+#             s.recv(32)
+#             json_data = json.dumps({'y' : upletY[i]})
+#             s.sendall(json_data.encode())
+#             s.recv(32)
+#         s.recv(16)
+#         i+=1
+#     json_data = json.dumps({'x': "end"})
+#     s.sendall(json_data.encode())
+
 
 
 def sendIdA(idA,c):
@@ -313,18 +360,18 @@ def timer(commit):
 
 def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
-    sock = socket.socket()
-    host = socket.gethostbyname("")
-    # print(host)
-    port = port1[f]
-    sock.bind((host, port))
-    sock.listen(5)
-    c, addr = sock.accept()     # Establish connection with client.
-    print('Got connection from ', addr)
+    # sock = socket.socket()
+    # host = socket.gethostbyname("")
+    # # print(host)
+    # port = port1[f]
+    # sock.bind((host, port))
+    # sock.listen(5)
+    # c, addr = sock.accept()     # Establish connection with client.
+    # print('Got connection from ', addr)
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
 
-    num_thread = threading.get_ident()
+    # num_thread = threading.get_ident()
     tupleListA = receiveUplet(c)
 
     BooleanA = []
@@ -364,18 +411,18 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
 def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
-    sock = socket.socket()
-    host = socket.gethostbyname("")
-    port = port2[f]
-    sock.bind((host, port))
-    sock.listen(5)
-    c, addr = sock.accept()     # Establish connection with client.
-    print('Got connection from ', addr)
+    # sock = socket.socket()
+    # host = socket.gethostbyname("")
+    # port = port2[f]
+    # sock.bind((host, port))
+    # sock.listen(5)
+    # c, addr = sock.accept()     # Establish connection with client.
+    # print('Got connection from ', addr)
 
     list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3]
 
-    num_thread = threading.get_ident()
+    # num_thread = threading.get_ident()
     tupleListA = receiveUplet(c)
 
 
@@ -448,18 +495,19 @@ def linkage(dataset_B):
         tuple2 = numberOfTuple-8
 
     for f in range(tuple1):
-        new_thread = threading.Thread(target=link_one_tuple,args=(f,registreB,BooleanA,idB,beta,G,Total_idA,empty))
-        jobs.append(new_thread)
+        # new_thread = threading.Thread(target=link_one_tuple,args=(f,registreB,BooleanA,idB,beta,G,Total_idA,empty))
+        # jobs.append(new_thread)
+        link_one_tuple(f, registreB, BooleanA, idB, beta, G, Total_idA, empty)
 
     for f in range(tuple2):
         new_thread = threading.Thread(target=link_one_tuple_missing,args=(f,registreB,BooleanA,idB,beta,G,Total_idA,empty))
         jobs.append(new_thread)
 
-    for job in jobs:
-        job.start()
-    
-    for job in jobs:
-        job.join()
+    # for job in jobs:
+    #     job.start()
+    #
+    # for job in jobs:
+    #     job.join()
 
     C = {'Value': registreB[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset B. True means linked, False the opposite
     donnees = pd.DataFrame(C, columns=['Value'])
