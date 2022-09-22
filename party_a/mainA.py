@@ -12,8 +12,8 @@ import threading
 from Crypto.PublicKey import ECC
 
 
-port = 12345
-port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port = 10000
+port1 = [10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008]
 port2 = [19376, 19346, 19347, 19348, 19349, 19350]
 
 
@@ -27,23 +27,24 @@ args = parser.parse_args()
 dataset_A = pd.read_csv(args.d)  # Opening dataset A with the name we just got from the parser
 
 alpha = secrets.randbits(256) #generation of alpha for the private set intersection.
-s = socket.socket()        # Create a socket object
+sock = socket.socket()        # Create a socket object
+host = "party_b"
 
 
 stop = False
 
 while not stop:
     try:
-        host = socket.gethostbyname("party_b")
-        s.connect((host, port))    # Establish connection with client.
+        sock.connect((host, port))    # Establish connection with client.
+        print("Connected to ", host, port)
         stop = True
     except Exception:
-            #print("Trying to reconnect...")
+        print("Trying to reconnect...")
         time.sleep(1)
 
 
 #s.connect((host, port))
-batch_size = 40
+batch_size = 1
 
 #A function that transform a point into a hash
 def hashPoint(P):
@@ -89,10 +90,13 @@ def receiveUpletPoint(s):
     upletY = []
     end = False
     while not end:
-        result = s.recv(1048576)
+        result = s.recv(104857600)
+        # print(result)
         json_data = json.loads(result.decode())
         x = json_data.get('x')
         y = json_data.get('y')
+
+        # print(x, y)
 
         if x != "end":
             upletX = upletX + x
@@ -102,6 +106,28 @@ def receiveUpletPoint(s):
             end = True
     uplet = reconstructPointFromXY(upletX,upletY)
     return uplet
+
+# def receiveUpletPoint(s):
+#     upletX = []
+#     upletY = []
+#     end = False
+#     while not end:
+#         result = s.recv(1048576)
+#         # print(result)
+#         # print(result)
+#         data = json.loads(result.decode()).get('x')
+#         if data != "end":
+#             x = data
+#             s.sendall(b'ok')
+#             y = json.loads(s.recv(1048576).decode()).get('y')
+#             upletX.append(x)
+#             upletY.append(y)
+#             print(x, y)
+#             s.sendall(b'ok')
+#         else:
+#             end = True
+#     uplet = reconstructPointFromXY(upletX,upletY)
+#     return uplet
 
 #A function that get a point and return its coordinates as integers
 def splitXY(uplet) :
@@ -158,6 +184,35 @@ def sendUpletPoint(uplet, s):
         i+=1
     json_data = json.dumps({'x': "end"})
     s.sendall(json_data.encode())
+
+
+# def sendUpletPoint(uplet, s):
+#
+#     upletX,upletY = splitXY(uplet)
+#     end = False
+#     i = 0
+#     while not end:
+#         if i+1 >= len(upletX):
+#             end = True
+#             json_data = json.dumps({'x': upletX[i]})
+#             s.sendall(json_data.encode())
+#             s.recv(32)
+#             json_data = json.dumps({'y' : upletY[i]})
+#             s.sendall(json_data.encode())
+#             s.recv(32)
+#         else:
+#             json_data = json.dumps({'x': upletX[i]})
+#             s.sendall(json_data.encode())
+#             s.recv(32)
+#             json_data = json.dumps({'y' : upletY[i]})
+#             s.sendall(json_data.encode())
+#             s.recv(32)
+#
+#         s.recv(16)
+#         i+=1
+#     json_data = json.dumps({'x': "end"})
+#     s.sendall(json_data.encode())
+
 
 #A function to receive a list of the still permutated linked IdA from A
 def receiveIdA(s):
@@ -306,18 +361,18 @@ def create_one_tuple(f,registreA,G,empty):
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
 
-    sock = socket.socket()
-    port = port1[f]
+    # sock = socket.socket()
+    # port = port1[f]
 
     stop = False
 
-    while not stop:
-        try:
-            sock.connect((host, port))    # Establish connection with client.
-            stop = True
-        except Exception:
-            print("Trying to reconnect...")
-            time.sleep(1)
+    # while not stop:
+    #     try:
+    #         sock.connect((host, port))
+    #         print("Connected to ", host,":",port)
+    #         stop = True
+    #     except Exception:
+    #         time.sleep(1)
 
     num_thread = threading.get_ident()
     if len(list[f]) == 2:
@@ -328,10 +383,11 @@ def create_one_tuple(f,registreA,G,empty):
 
 
     sendUplet(upletA,sock)
-
+    # print("Uplet A set")
 
     #get tuple from B (y^beta)
     tuple = receiveUpletPoint(sock)
+    # print("uplet b received")
 
 
     for i in range(len(tuple)):
@@ -340,9 +396,10 @@ def create_one_tuple(f,registreA,G,empty):
 
     #send tuple to B
     sendUpletPoint(tuple,sock)
+    # print("Uplet point sent")
 
     idA  = receiveIdA(sock)
-
+    # print("Ida received")
     for i in range(len(idA)):
         registreA[8][int(idA[i])] = True
 
@@ -351,21 +408,22 @@ def create_one_tuple_missing(f,registreA,G,empty):
     list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3]
 
-    sock = socket.socket()
-    port = port2[f]
+    # sock = socket.socket()
+    # port = port2[f]
+    #
+    # stop = False
+    #
+    # while not stop:
+    #     try:
+    #         print("Current port : ", port)
+    #         sock.connect((host, port))    # Establish connection with client.
+    #         stop = True
+    #     except Exception:
+    #         print("Trying to reconnect to ", host,":",port)
+    #         time.sleep(1)
 
-    stop = False
+    # num_thread = threading.get_ident()
 
-    while not stop:
-        try:
-            print("Current port : ", port)
-            sock.connect((host, port))    # Establish connection with client.
-            stop = True
-        except Exception:
-            print("Trying to reconnect...")
-            time.sleep(1)
-
-    num_thread = threading.get_ident()
     if len(list[f]) == 2:
         upletA = creatingTupleMissing2(registreA,list[f],missing[f],G,empty)
     else:
@@ -402,7 +460,8 @@ def getEmpty(registreA):
 
 def createTupleA(dataset_A):
 
-    numberOfTuple = int(receiveNumberOfUplet(s))
+    numberOfTuple = int(receiveNumberOfUplet(sock))
+    # print(numberOfTuple)
     jobs = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreA = extratingData(dataset_A)
@@ -418,21 +477,24 @@ def createTupleA(dataset_A):
         tuple1 = 8
         tuple2 = numberOfTuple-8
 
+    time.sleep(3)
+
     for f in range(tuple1):
 
-        new_thread = threading.Thread(target=create_one_tuple,args=(f,registreA,G,empty))
-        jobs.append(new_thread)
+        # new_thread = threading.Thread(target=create_one_tuple,args=(f,registreA,G,empty))
+        # jobs.append(new_thread)
+        create_one_tuple(f, registreA, G, empty)
 
     for f in range(tuple2):
 
         new_thread = threading.Thread(target=create_one_tuple_missing,args=(f,registreA,G,empty))
         jobs.append(new_thread)
 
-    for job in jobs:
-        job.start()
-    
-    for job in jobs:
-        job.join()
+    # for job in jobs:
+    #     job.start()
+    #
+    # for job in jobs:
+    #     job.join()
 
     registreA[8] = registreA[8][unshuf_order] # Unshuffle the shuffled data
     C = {'Value': registreA[8]}  # We output the file OutputA.csv that contain the output True or False for all IDs of dataset A. True means linked, False the opposite
@@ -441,7 +503,7 @@ def createTupleA(dataset_A):
     donnees = pd.DataFrame(C, columns=['Value'])
     donnees.to_csv('OutputA.csv', index=False, header=True, encoding='utf-8', sep=';')
 
-    s.close()
+    sock.close()
 
 createTupleA(dataset_A)
 
