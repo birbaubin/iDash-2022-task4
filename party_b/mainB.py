@@ -39,6 +39,8 @@ print('Got connection from ', addr)
 Total_idA = []
 batch_size = 1
 
+lock = threading.Lock()
+
 if numberOfTuple > 14:
     print("Maximum number of tuple is 14, numberOfTuple set to 14")
     numberOfTuple=14
@@ -63,6 +65,7 @@ def reconstructPointFromXY(upletX,upletY):
 
 
 def receiveUplet(s):
+
     uplet = []
     end = False
     i = 0
@@ -77,46 +80,50 @@ def receiveUplet(s):
         else:
             end = True
         i+=1
+
     return uplet
 
+
+def receiveUpletPoint(s):
+
+    lock.acquire()
+    upletX = []
+    upletY = []
+    end = False
+    while not end:
+        result = s.recv(1048576)
+        json_data = json.loads(result.decode())
+        x = json_data.get('x')
+        y = json_data.get('y')
+
+        if x != "end":
+            upletX = upletX + x
+            upletY = upletY + y
+            s.sendall(b'ok')
+        else:
+            end = True
+    uplet = reconstructPointFromXY(upletX,upletY)
+    lock.release()
+    return uplet
 
 # def receiveUpletPoint(s):
 #     upletX = []
 #     upletY = []
 #     end = False
 #     while not end:
-#         result = s.recv(1048576)
-#         json_data = json.loads(result.decode())
-#         x = json_data.get('x')
-#         y = json_data.get('y')
-#
+#         x = s.recv(1048576).decode()
 #         if x != "end":
-#             upletX = upletX + x
-#             upletY = upletY + y
+#             s.sendall(b'ok')
+#             y = s.recv(1048576).decode()
+#             #s.sendall(b'ok')
+#
+#             upletX.append(x)
+#             upletY.append(y)
 #             s.sendall(b'ok')
 #         else:
 #             end = True
 #     uplet = reconstructPointFromXY(upletX,upletY)
 #     return uplet
-
-def receiveUpletPoint(s):
-    upletX = []
-    upletY = []
-    end = False
-    while not end:
-        x = s.recv(1048576).decode()
-        if x != "end":
-            s.sendall(b'ok')
-            y = s.recv(1048576).decode()
-            #s.sendall(b'ok')
-
-            upletX.append(x)
-            upletY.append(y)
-            s.sendall(b'ok')
-        else:
-            end = True
-    uplet = reconstructPointFromXY(upletX,upletY)
-    return uplet
 
 
 def splitXY(uplet) :
@@ -153,46 +160,51 @@ def sendUplet(uplet, s):
     json_data = json.dumps({str(i): "end"})
     s.sendall(json_data.encode())
 
+
 def sendNumberOfUplet(uplet, s):
     s.sendall(str(uplet).encode())
     s.recv(16)
+
+def sendUpletPoint(uplet, s):
+
+    lock.acquire()
+
+    upletX,upletY = splitXY(uplet)
+    end = False
+    i = 0
+    while not end:
+        if i*batch_size+batch_size >= len(upletX):
+            end = True
+            json_data = json.dumps({'x': upletX[i*batch_size:len(upletX)], 'y' : upletY[i*batch_size:len(upletY)]})
+            s.sendall(json_data.encode())
+        else:
+            json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
+            s.sendall(json_data.encode())
+
+        s.recv(16)
+        i+=1
+    time.sleep(0.05)
+    json_data = json.dumps({'x': "end"})
+    s.sendall(json_data.encode())
+    lock.release()
 
 # def sendUpletPoint(uplet, s):
 #
 #     upletX,upletY = splitXY(uplet)
 #     end = False
-#     i = 0
-#     while not end:
-#         if i*batch_size+batch_size >= len(upletX):
-#             end = True
-#             json_data = json.dumps({'x': upletX[i*batch_size:len(upletX)], 'y' : upletY[i*batch_size:len(upletY)]})
-#             s.sendall(json_data.encode())
-#         else:
-#             json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
-#             s.sendall(json_data.encode())
-#
+#     for i in range(len(upletX)):
+#         # json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
+#         s.sendall(upletX[i].encode())
 #         s.recv(16)
-#         i+=1
-#     time.sleep(0.05)
-#     json_data = json.dumps({'x': "end"})
-#     s.sendall(json_data.encode())
-
-def sendUpletPoint(uplet, s):
-
-    upletX,upletY = splitXY(uplet)
-    end = False
-    for i in range(len(upletX)):
-        # json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
-        s.sendall(upletX[i].encode())
-        s.recv(16)
-        s.sendall(upletY[i].encode())
-        s.recv(16)
-
-    # json_data = json.dumps({'x': "end"})
-    s.sendall(b'end')
+#         s.sendall(upletY[i].encode())
+#         s.recv(16)
+#
+#     # json_data = json.dumps({'x': "end"})
+#     s.sendall(b'end')
 
 
 def sendIdA(idA,c):
+
     end = False
     i = 0
     newIdA = []

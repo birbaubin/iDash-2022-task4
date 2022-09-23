@@ -28,7 +28,7 @@ dataset_A = pd.read_csv(args.d)  # Opening dataset A with the name we just got f
 
 alpha = secrets.randbits(256) #generation of alpha for the private set intersection.
 s = socket.socket()        # Create a socket object
-
+lock = threading.Lock()
 
 stop = False
 
@@ -37,9 +37,10 @@ while not stop:
         # host = socket.gethostbyname("")
         host = "party_b"
         s.connect((host, port))    # Establish connection with client.
+        print("Connected to", host, ":", port)
         stop = True
     except Exception:
-            #print("Trying to reconnect...")
+        print("Trying to reconnect...")
         time.sleep(1)
 
 
@@ -60,6 +61,7 @@ def reconstructPointFromXY(upletX,upletY):
 
 #A function to receive the tuples from B
 def receiveUplet(s):
+
     uplet = []
     end = False
     i = 0
@@ -74,6 +76,7 @@ def receiveUplet(s):
         else:
             end = True
         i+=1
+
     return uplet
 
 #A function to receive the number of tuples that will be considered from B
@@ -85,44 +88,49 @@ def receiveNumberOfUplet(s):
     return uplet
 
 #A function to receive a list of points (A tuple with the format of points from the ECC) from B
+def receiveUpletPoint(s):
+
+    lock.acquire()
+    upletX = []
+    upletY = []
+    end = False
+    while not end:
+        result = s.recv(1048576)
+        json_data = json.loads(result.decode())
+        x = json_data.get('x')
+        y = json_data.get('y')
+
+        if x != "end":
+            upletX = upletX + x
+            upletY = upletY + y
+            s.sendall(b'ok')
+        else:
+            end = True
+
+
+    uplet = reconstructPointFromXY(upletX,upletY)
+    lock.release()
+    return uplet
+
+
 # def receiveUpletPoint(s):
 #     upletX = []
 #     upletY = []
 #     end = False
 #     while not end:
-#         result = s.recv(1048576)
-#         json_data = json.loads(result.decode())
-#         x = json_data.get('x')
-#         y = json_data.get('y')
-#
+#         x = s.recv(1048576).decode()
 #         if x != "end":
-#             upletX = upletX + x
-#             upletY = upletY + y
+#             s.sendall(b'ok')
+#             y = s.recv(1048576).decode()
+#             #s.sendall(b'ok')
+#
+#             upletX.append(x)
+#             upletY.append(y)
 #             s.sendall(b'ok')
 #         else:
 #             end = True
 #     uplet = reconstructPointFromXY(upletX,upletY)
 #     return uplet
-
-
-def receiveUpletPoint(s):
-    upletX = []
-    upletY = []
-    end = False
-    while not end:
-        x = s.recv(1048576).decode()
-        if x != "end":
-            s.sendall(b'ok')
-            y = s.recv(1048576).decode()
-            #s.sendall(b'ok')
-
-            upletX.append(x)
-            upletY.append(y)
-            s.sendall(b'ok')
-        else:
-            end = True
-    uplet = reconstructPointFromXY(upletX,upletY)
-    return uplet
 
 
 #A function that get a point and return its coordinates as integers
@@ -161,39 +169,43 @@ def sendUplet(uplet, s):
     json_data = json.dumps({str(i): "end"})
     s.sendall(json_data.encode())
 
+
 #A function to send a list of points to B
+def sendUpletPoint(uplet, s):
+
+    # lock.acquire()
+    upletX,upletY = splitXY(uplet)
+    end = False
+    i = 0
+    while not end:
+        if i*batch_size+batch_size >= len(upletX):
+            end = True
+            json_data = json.dumps({'x': upletX[i*batch_size:len(upletX)], 'y' : upletY[i*batch_size:len(upletY)]})
+            s.sendall(json_data.encode())
+        else:
+            json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
+            s.sendall(json_data.encode())
+
+        s.recv(16)
+        i+=1
+    json_data = json.dumps({'x': "end"})
+    s.sendall(json_data.encode())
+
+    # lock.release()
+
 # def sendUpletPoint(uplet, s):
 #
 #     upletX,upletY = splitXY(uplet)
 #     end = False
-#     i = 0
-#     while not end:
-#         if i*batch_size+batch_size >= len(upletX):
-#             end = True
-#             json_data = json.dumps({'x': upletX[i*batch_size:len(upletX)], 'y' : upletY[i*batch_size:len(upletY)]})
-#             s.sendall(json_data.encode())
-#         else:
-#             json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
-#             s.sendall(json_data.encode())
-#
+#     for i in range(len(upletX)):
+#         # json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
+#         s.sendall(upletX[i].encode())
 #         s.recv(16)
-#         i+=1
-#     json_data = json.dumps({'x': "end"})
-#     s.sendall(json_data.encode())
-
-def sendUpletPoint(uplet, s):
-
-    upletX,upletY = splitXY(uplet)
-    end = False
-    for i in range(len(upletX)):
-        # json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
-        s.sendall(upletX[i].encode())
-        s.recv(16)
-        s.sendall(upletY[i].encode())
-        s.recv(16)
-
-    # json_data = json.dumps({'x': "end"})
-    s.sendall(b'end')
+#         s.sendall(upletY[i].encode())
+#         s.recv(16)
+#
+#     # json_data = json.dumps({'x': "end"})
+#     s.sendall(b'end')
 
 #A function to receive a list of the still permutated linked IdA from A
 def receiveIdA(s):
@@ -350,6 +362,7 @@ def create_one_tuple(f,registreA,G,empty):
     while not stop:
         try:
             sock.connect((host, port))    # Establish connection with client.
+            print("Connected to", host, ":", port)
             stop = True
         except Exception:
             print("Trying to reconnect...")
@@ -364,11 +377,11 @@ def create_one_tuple(f,registreA,G,empty):
 
 
     sendUplet(upletA,sock)
-
+    print("uplet A sent")
 
     #get tuple from B (y^beta)
     tuple = receiveUpletPoint(sock)
-
+    print("uplet B received")
 
     for i in range(len(tuple)):
         if (tuple[i].is_point_at_infinity() == False) :
@@ -376,8 +389,10 @@ def create_one_tuple(f,registreA,G,empty):
 
     #send tuple to B
     sendUpletPoint(tuple,sock)
+    print("uplet B sent")
 
     idA  = receiveIdA(sock)
+    print("id A received")
 
     for i in range(len(idA)):
         registreA[8][int(idA[i])] = True
