@@ -35,7 +35,7 @@ stop = False
 while not stop:
     try:
         # host = socket.gethostbyname("")
-        host = "party_b"
+        host = "192.168.1.3"
         s.connect((host, port))    # Establish connection with client.
         print("Connected to", host, ":", port)
         stop = True
@@ -173,7 +173,7 @@ def sendUplet(uplet, s):
 #A function to send a list of points to B
 def sendUpletPoint(uplet, s):
 
-    # lock.acquire()
+    lock.acquire()
     upletX,upletY = splitXY(uplet)
     end = False
     i = 0
@@ -191,7 +191,7 @@ def sendUpletPoint(uplet, s):
     json_data = json.dumps({'x': "end"})
     s.sendall(json_data.encode())
 
-    # lock.release()
+    lock.release()
 
 # def sendUpletPoint(uplet, s):
 #
