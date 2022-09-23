@@ -18,7 +18,7 @@ RUN pypy3 -mpip install pycryptodome
 
 COPY . .
 
-CMD [ "pypy3", "mainB.py", "-n4", "-ddatasetB.csv" ]
+CMD [ "pypy3", "mainB.py", "-n4", "-ddatasetBUniTest.csv" ]
 
 #CMD [ "pypy3", "mainB.py"]
 

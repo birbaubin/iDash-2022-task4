@@ -12,8 +12,8 @@ import threading
 from Crypto.PublicKey import ECC
 
 
-port = 12345
-port1 = [18376, 18346, 18347, 18348, 18349, 18000, 18800, 18880]
+port = 10000
+port1 = [10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008]
 port2 = [19376, 19346, 19347, 19348, 19349, 19350]
 
 
@@ -34,7 +34,8 @@ stop = False
 
 while not stop:
     try:
-        host = socket.gethostbyname("party_b")
+        # host = socket.gethostbyname("")
+        host = "party_b"
         s.connect((host, port))    # Establish connection with client.
         stop = True
     except Exception:
@@ -43,7 +44,7 @@ while not stop:
 
 
 #s.connect((host, port))
-batch_size = 40
+batch_size = 5
 
 #A function that transform a point into a hash
 def hashPoint(P):
@@ -84,24 +85,45 @@ def receiveNumberOfUplet(s):
     return uplet
 
 #A function to receive a list of points (A tuple with the format of points from the ECC) from B
+# def receiveUpletPoint(s):
+#     upletX = []
+#     upletY = []
+#     end = False
+#     while not end:
+#         result = s.recv(1048576)
+#         json_data = json.loads(result.decode())
+#         x = json_data.get('x')
+#         y = json_data.get('y')
+#
+#         if x != "end":
+#             upletX = upletX + x
+#             upletY = upletY + y
+#             s.sendall(b'ok')
+#         else:
+#             end = True
+#     uplet = reconstructPointFromXY(upletX,upletY)
+#     return uplet
+
+
 def receiveUpletPoint(s):
     upletX = []
     upletY = []
     end = False
     while not end:
-        result = s.recv(1048576)
-        json_data = json.loads(result.decode())
-        x = json_data.get('x')
-        y = json_data.get('y')
-
+        x = s.recv(1048576).decode()
         if x != "end":
-            upletX = upletX + x
-            upletY = upletY + y
+            s.sendall(b'ok')
+            y = s.recv(1048576).decode()
+            #s.sendall(b'ok')
+
+            upletX.append(x)
+            upletY.append(y)
             s.sendall(b'ok')
         else:
             end = True
     uplet = reconstructPointFromXY(upletX,upletY)
     return uplet
+
 
 #A function that get a point and return its coordinates as integers
 def splitXY(uplet) :
@@ -140,24 +162,38 @@ def sendUplet(uplet, s):
     s.sendall(json_data.encode())
 
 #A function to send a list of points to B
+# def sendUpletPoint(uplet, s):
+#
+#     upletX,upletY = splitXY(uplet)
+#     end = False
+#     i = 0
+#     while not end:
+#         if i*batch_size+batch_size >= len(upletX):
+#             end = True
+#             json_data = json.dumps({'x': upletX[i*batch_size:len(upletX)], 'y' : upletY[i*batch_size:len(upletY)]})
+#             s.sendall(json_data.encode())
+#         else:
+#             json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
+#             s.sendall(json_data.encode())
+#
+#         s.recv(16)
+#         i+=1
+#     json_data = json.dumps({'x': "end"})
+#     s.sendall(json_data.encode())
+
 def sendUpletPoint(uplet, s):
 
     upletX,upletY = splitXY(uplet)
     end = False
-    i = 0
-    while not end:
-        if i*batch_size+batch_size >= len(upletX):
-            end = True
-            json_data = json.dumps({'x': upletX[i*batch_size:len(upletX)], 'y' : upletY[i*batch_size:len(upletY)]})
-            s.sendall(json_data.encode())
-        else:
-            json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
-            s.sendall(json_data.encode())
-
+    for i in range(len(upletX)):
+        # json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
+        s.sendall(upletX[i].encode())
         s.recv(16)
-        i+=1
-    json_data = json.dumps({'x': "end"})
-    s.sendall(json_data.encode())
+        s.sendall(upletY[i].encode())
+        s.recv(16)
+
+    # json_data = json.dumps({'x': "end"})
+    s.sendall(b'end')
 
 #A function to receive a list of the still permutated linked IdA from A
 def receiveIdA(s):
