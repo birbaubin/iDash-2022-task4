@@ -86,7 +86,7 @@ def receiveUplet(s):
 
 def receiveUpletPoint(s):
 
-    lock.acquire()
+    # lock.acquire()
     upletX = []
     upletY = []
     end = False
@@ -103,7 +103,7 @@ def receiveUpletPoint(s):
         else:
             end = True
     uplet = reconstructPointFromXY(upletX,upletY)
-    lock.release()
+    # lock.release()
     return uplet
 
 # def receiveUpletPoint(s):
@@ -167,7 +167,7 @@ def sendNumberOfUplet(uplet, s):
 
 def sendUpletPoint(uplet, s):
 
-    lock.acquire()
+    # lock.acquire()
 
     upletX,upletY = splitXY(uplet)
     end = False
@@ -186,7 +186,7 @@ def sendUpletPoint(uplet, s):
     time.sleep(0.05)
     json_data = json.dumps({'x': "end"})
     s.sendall(json_data.encode())
-    lock.release()
+    # lock.release()
 
 # def sendUpletPoint(uplet, s):
 #
@@ -359,19 +359,18 @@ def timer(commit):
 
 def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
-    sock = socket.socket()
-    host = socket.gethostbyname("")
-    # print(host)
-    port = port1[f]
-    sock.bind((host, port))
-    sock.listen(5)
-    c, addr = sock.accept()     # Establish connection with client.
-    print('Got connection from ', addr)
+    t_sock = socket.socket()
+    t_host = socket.gethostbyname("")
+    t_port = port1[f]
+    t_sock.bind((t_host, t_port))
+    t_sock.listen(5)
+    t_c, t_addr = t_sock.accept()     # Establish connection with client.
+    print('Got connection from ', t_addr)
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
 
     num_thread = threading.get_ident()
-    tupleListA = receiveUplet(c)
+    tupleListA = receiveUplet(t_c)
 
     BooleanA = []
     for i in range(len(tupleListA)):
@@ -385,12 +384,12 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
 
     #send upletB to A
-    sendUpletPoint(upletB,c) # peut être à changer pour ECC
+    sendUpletPoint(upletB,t_c) # peut être à changer pour ECC
     
     invBeta = pow(beta, order-2 ,order) # a voir ECC
 
     #get the tupleB from A
-    tupleListB = receiveUpletPoint(c) # here tupleListB is a list of ECC points
+    tupleListB = receiveUpletPoint(t_c) # here tupleListB is a list of ECC points
 
 
     idA = []  # The list that will save the ID of new linked elements of A
@@ -405,24 +404,24 @@ def link_one_tuple(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     compareTuple(tupleListA,tupleListB,idA,idB,BooleanA,registreB[8])
 
     # send idA to A
-    sendIdA(idA,c)
+    sendIdA(idA,t_c)
 
 
 def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
-    sock = socket.socket()
-    host = socket.gethostbyname("")
-    port = port2[f]
-    sock.bind((host, port))
-    sock.listen(5)
-    c, addr = sock.accept()     # Establish connection with client.
-    print('Got connection from ', addr)
+    t_sock = socket.socket()
+    t_host = socket.gethostbyname("")
+    t_port = port2[f]
+    t_sock.bind((t_host, t_port))
+    t_sock.listen(5)
+    t_c, t_addr = t_host.accept()     # Establish connection with client.
+    print('Got connection from ', t_addr)
 
     list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3]
 
     num_thread = threading.get_ident()
-    tupleListA = receiveUplet(c)
+    tupleListA = receiveUplet(t_c)
 
 
     # upletB is a list of ECC points
@@ -436,12 +435,12 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
 
 
     #send upletB to A
-    sendUpletPoint(upletB,c)
+    sendUpletPoint(upletB,t_c)
 
     invBeta = pow(beta, order-2 ,order)
 
     #get the tupleB from A
-    tupleListB = receiveUpletPoint(c) # here tupleListB is a list of ECC points
+    tupleListB = receiveUpletPoint(t_c) # here tupleListB is a list of ECC points
 
 
     idA = []  # The list that will save the ID of new linked elements of A
@@ -456,7 +455,7 @@ def link_one_tuple_missing(f,registreB,BooleanA,idB,beta,G,Total_idA,empty):
     compareTuple(tupleListA,tupleListB,idA,idB,BooleanA,registreB[8])
 
     # send idA to A
-    sendIdA(idA,c)
+    sendIdA(idA,t_c)
 
 
 def getEmpty(registreB):

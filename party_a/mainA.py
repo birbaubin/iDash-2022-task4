@@ -27,7 +27,7 @@ args = parser.parse_args()
 dataset_A = pd.read_csv(args.d)  # Opening dataset A with the name we just got from the parser
 
 alpha = secrets.randbits(256) #generation of alpha for the private set intersection.
-s = socket.socket()        # Create a socket object
+sock = socket.socket()        # Create a socket object
 lock = threading.Lock()
 
 stop = False
@@ -36,7 +36,7 @@ while not stop:
     try:
         # host = socket.gethostbyname("")
         host = "192.168.1.3"
-        s.connect((host, port))    # Establish connection with client.
+        sock.connect((host, port))    # Establish connection with client.
         print("Connected to", host, ":", port)
         stop = True
     except Exception:
@@ -90,7 +90,7 @@ def receiveNumberOfUplet(s):
 #A function to receive a list of points (A tuple with the format of points from the ECC) from B
 def receiveUpletPoint(s):
 
-    lock.acquire()
+    # lock.acquire()
     upletX = []
     upletY = []
     end = False
@@ -109,7 +109,7 @@ def receiveUpletPoint(s):
 
 
     uplet = reconstructPointFromXY(upletX,upletY)
-    lock.release()
+    # lock.release()
     return uplet
 
 
@@ -173,7 +173,7 @@ def sendUplet(uplet, s):
 #A function to send a list of points to B
 def sendUpletPoint(uplet, s):
 
-    lock.acquire()
+    # lock.acquire()
     upletX,upletY = splitXY(uplet)
     end = False
     i = 0
@@ -191,7 +191,7 @@ def sendUpletPoint(uplet, s):
     json_data = json.dumps({'x': "end"})
     s.sendall(json_data.encode())
 
-    lock.release()
+    # lock.release()
 
 # def sendUpletPoint(uplet, s):
 #
@@ -354,33 +354,31 @@ def create_one_tuple(f,registreA,G,empty):
 
     list = [[0, 1,2], [0, 1,5], [1,3],[1,6],[0,1,4],[2,5],[2,4],[4,5]]
 
-    sock = socket.socket()
-    port = port1[f]
+    t_sock = socket.socket()
+    t_port = port1[f]
 
-    stop = False
+    t_stop = False
 
-    while not stop:
+    while not t_stop:
         try:
-            sock.connect((host, port))    # Establish connection with client.
-            print("Connected to", host, ":", port)
-            stop = True
+            t_sock.connect((host, t_port))    # Establish connection with client.
+            print("Connected to", host, ":", t_port)
+            t_stop = True
         except Exception:
             print("Trying to reconnect...")
             time.sleep(1)
 
-    num_thread = threading.get_ident()
     if len(list[f]) == 2:
         upletA = creatingTuple2(registreA,list[f],G,empty)
     else:
         upletA = creatingTuple3(registreA,list[f],G,empty)
     # uplet A is a list of hash
 
-
-    sendUplet(upletA,sock)
+    sendUplet(upletA,t_sock)
     print("uplet A sent")
 
     #get tuple from B (y^beta)
-    tuple = receiveUpletPoint(sock)
+    tuple = receiveUpletPoint(t_sock)
     print("uplet B received")
 
     for i in range(len(tuple)):
@@ -388,10 +386,10 @@ def create_one_tuple(f,registreA,G,empty):
             tuple[i] = alpha*tuple[i]
 
     #send tuple to B
-    sendUpletPoint(tuple,sock)
+    sendUpletPoint(tuple,t_sock)
     print("uplet B sent")
 
-    idA  = receiveIdA(sock)
+    idA  = receiveIdA(t_sock)
     print("id A received")
 
     for i in range(len(idA)):
@@ -402,33 +400,31 @@ def create_one_tuple_missing(f,registreA,G,empty):
     list = np.array([[2,7],[5,7],[0,1,7],[0,5,7],[1,4,7],[1,5,7]])
     missing = [4,4,4,3,3,3]
 
-    sock = socket.socket()
-    port = port2[f]
+    t_sock = socket.socket()
+    t_port = port2[f]
 
-    stop = False
+    t_stop = False
 
-    while not stop:
+    while not t_stop:
         try:
-            print("Current port : ", port)
-            sock.connect((host, port))    # Establish connection with client.
-            stop = True
+            print("Current port : ", t_port)
+            t_sock.connect((host, t_port))    # Establish connection with client.
+            t_stop = True
         except Exception:
             print("Trying to reconnect...")
             time.sleep(1)
 
-    num_thread = threading.get_ident()
+
     if len(list[f]) == 2:
         upletA = creatingTupleMissing2(registreA,list[f],missing[f],G,empty)
     else:
         upletA = creatingTupleMissing3(registreA,list[f],missing[f],G,empty)
     # uplet A is a list of hash
 
-
-    sendUplet(upletA,sock)
-
+    sendUplet(upletA,t_sock)
 
     #get tuple from B (y^beta)
-    tuple = receiveUpletPoint(sock)
+    tuple = receiveUpletPoint(t_sock)
 
 
     for i in range(len(tuple)):
@@ -436,9 +432,8 @@ def create_one_tuple_missing(f,registreA,G,empty):
             tuple[i] = alpha*tuple[i]
 
     #send tuple to B
-    sendUpletPoint(tuple,sock)
-
-    idA  = receiveIdA(sock)
+    sendUpletPoint(tuple, t_sock)
+    idA = receiveIdA(t_sock)
 
     for i in range(len(idA)):
         registreA[8][int(idA[i])] = True
@@ -453,7 +448,7 @@ def getEmpty(registreA):
 
 def createTupleA(dataset_A):
 
-    numberOfTuple = int(receiveNumberOfUplet(s))
+    numberOfTuple = int(receiveNumberOfUplet(sock))
     jobs = []
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     registreA = extratingData(dataset_A)
@@ -492,7 +487,7 @@ def createTupleA(dataset_A):
     donnees = pd.DataFrame(C, columns=['Value'])
     donnees.to_csv('OutputA.csv', index=False, header=True, encoding='utf-8', sep=';')
 
-    s.close()
+    sock.close()
 
 createTupleA(dataset_A)
 
