@@ -29,13 +29,14 @@ dataset_A = pd.read_csv(args.d)  # Opening dataset A with the name we just got f
 alpha = secrets.randbits(256) #generation of alpha for the private set intersection.
 sock = socket.socket()        # Create a socket object
 lock = threading.Lock()
+DEBUG = True
 
 stop = False
 
 while not stop:
     try:
         # host = socket.gethostbyname("")
-        host = "192.168.1.3"
+        host = "party_b"
         sock.connect((host, port))    # Establish connection with client.
         print("Connected to", host, ":", port)
         stop = True
@@ -45,7 +46,7 @@ while not stop:
 
 
 #s.connect((host, port))
-batch_size = 5
+batch_size = 4
 
 #A function that transform a point into a hash
 def hashPoint(P):
@@ -96,6 +97,7 @@ def receiveUpletPoint(s):
     end = False
     while not end:
         result = s.recv(1048576)
+        if DEBUG: print(result)
         json_data = json.loads(result.decode())
         x = json_data.get('x')
         y = json_data.get('y')
@@ -180,10 +182,10 @@ def sendUpletPoint(uplet, s):
     while not end:
         if i*batch_size+batch_size >= len(upletX):
             end = True
-            json_data = json.dumps({'x': upletX[i*batch_size:len(upletX)], 'y' : upletY[i*batch_size:len(upletY)]})
+            json_data = json.dumps({"x": upletX[i*batch_size:len(upletX)], "y" : upletY[i*batch_size:len(upletY)]})
             s.sendall(json_data.encode())
         else:
-            json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
+            json_data = json.dumps({"x": upletX[i*batch_size:i*batch_size+batch_size], "y" : upletY[i*batch_size:i*batch_size+batch_size]})
             s.sendall(json_data.encode())
 
         s.recv(16)

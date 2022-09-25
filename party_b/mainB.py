@@ -92,6 +92,7 @@ def receiveUpletPoint(s):
     end = False
     while not end:
         result = s.recv(1048576)
+        # print(result)
         json_data = json.loads(result.decode())
         x = json_data.get('x')
         y = json_data.get('y')
@@ -175,16 +176,16 @@ def sendUpletPoint(uplet, s):
     while not end:
         if i*batch_size+batch_size >= len(upletX):
             end = True
-            json_data = json.dumps({'x': upletX[i*batch_size:len(upletX)], 'y' : upletY[i*batch_size:len(upletY)]})
+            json_data = json.dumps({"x": upletX[i*batch_size:len(upletX)], "y" : upletY[i*batch_size:len(upletY)]})
             s.sendall(json_data.encode())
         else:
-            json_data = json.dumps({'x': upletX[i*batch_size:i*batch_size+batch_size], 'y' : upletY[i*batch_size:i*batch_size+batch_size]})
+            json_data = json.dumps({"x": upletX[i*batch_size:i*batch_size+batch_size], "y" : upletY[i*batch_size:i*batch_size+batch_size]})
             s.sendall(json_data.encode())
 
         s.recv(16)
         i+=1
     time.sleep(0.05)
-    json_data = json.dumps({'x': "end"})
+    json_data = json.dumps({"x": "end"})
     s.sendall(json_data.encode())
     # lock.release()
 
