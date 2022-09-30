@@ -2,33 +2,27 @@ def receiveUpletPoint(s):
     
     length = int(s.recv(8).decode())
     s.sendall(b'\00')
-    print("the received lenght", length)
     upletX = b''
     while len(upletX) < length:
-        # doing it in batches is generally better than trying
-        # to do it all in one go, so I believe.
         to_read = length - len(upletX)
         upletX += s.recv(
             4096 if to_read > 4096 else to_read)
-        #result = result + json.loads(data.decode())
 
-        # send our 0 ack
-        print(len(upletX))
-    
-
+    s.sendall(b'\00')
+    length = int(s.recv(8).decode())
+    s.sendall(b'\00')
     upletY = b''
     while len(upletY) < length:
-        # doing it in batches is generally better than trying
-        # to do it all in one go, so I believe.
         to_read = length - len(upletY)
         upletY += s.recv(
             4096 if to_read > 4096 else to_read)
-        #result = result + json.loads(data.decode())
-
-        # send our 0 ack
-        print(len(upletY))
     
     s.sendall(b'\00')
+
+    print("Receiveupletpoint", len(upletY))
+    upletX = json.loads(upletX.decode())
+    upletY = json.loads(upletY.decode())
+    print(upletX[0:10], upletY[0:10])
 
     uplet = reconstructPointFromXY(upletX,upletY)
     return uplet
