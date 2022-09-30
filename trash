@@ -1,17 +1,34 @@
-def sendUpletPoint(uplet, s):
+def receiveUpletPoint(s):
+    
+    length = int(s.recv(8).decode())
+    s.sendall(b'\00')
+    print("the received lenght", length)
+    upletX = b''
+    while len(upletX) < length:
+        # doing it in batches is generally better than trying
+        # to do it all in one go, so I believe.
+        to_read = length - len(upletX)
+        upletX += s.recv(
+            4096 if to_read > 4096 else to_read)
+        #result = result + json.loads(data.decode())
 
-    upletX,upletY = splitXY(uplet)
-    upletX = [str(i) for i in upletX]
-    upletY = [str(i) for i in upletY]
+        # send our 0 ack
+        print(len(upletX))
+    
 
-    data = json.dumps(upletX).encode()
-    length = len(data)
-    print(length)
-    s.sendall(str(length).encode())
-    s.recv(1)
-    s.sendall(data)
+    upletY = b''
+    while len(upletY) < length:
+        # doing it in batches is generally better than trying
+        # to do it all in one go, so I believe.
+        to_read = length - len(upletY)
+        upletY += s.recv(
+            4096 if to_read > 4096 else to_read)
+        #result = result + json.loads(data.decode())
 
-    data = json.dumps(upletY).encode()
-    s.sendall(data)
-    s.recv(1)
+        # send our 0 ack
+        print(len(upletY))
+    
+    s.sendall(b'\00')
 
+    uplet = reconstructPointFromXY(upletX,upletY)
+    return uplet
