@@ -1,27 +1,16 @@
-IP_SERVER_B=192.168.1.2
-DATASET_NAME=datasetAUniTest.csv
-PORT1=10000
-PORT2=10001
-PORT3=10002
-PORT4=10003
-PORT5=10004
-PORT6=10005
-PORT7=10006
-PORT8=10007
-PORT9=10008
-PORT10=10009
-PORT11=10010
-PORT12=10011
-PORT13=10012
-PORT14=10013
-PORT15=10014
+length = int(s.recv(8).decode())
+    print(length)
+    result = []
+    data = b''
+    while len(data) < length:
+        # doing it in batches is generally better than trying
+        # to do it all in one go, so I believe.
+        to_read = length - len(data)
+        data += s.recv(
+            4096 if to_read > 4096 else to_read)
+        #result = result + json.loads(data.decode())
 
-
-ENVIRONMENT = os.environ
-port = ENVIRONMENT.get("PORT1")
-port1 = [ENVIRONMENT.get("PORT2"), ENVIRONMENT.get("PORT3"), ENVIRONMENT.get("PORT4"), ENVIRONMENT.get("PORT5"),
-ENVIRONMENT.get("PORT6"), ENVIRONMENT.get("PORT7"), ENVIRONMENT.get("PORT8"), ENVIRONMENT.get("PORT9")]
-port2 = [ENVIRONMENT.get("PORT10"), ENVIRONMENT.get("PORT11"), ENVIRONMENT.get("PORT12"), ENVIRONMENT.get("PORT13"), 
-ENVIRONMENT.get("PORT14"), ENVIRONMENT.get("PORT15")]
-DEBUG = True
-BATCH_SIZE=5
+        # send our 0 ack
+        print(len(data))
+    assert len(b'\00') == 1
+    s.sendall(b'\00')
