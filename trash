@@ -1,16 +1,17 @@
-length = int(s.recv(8).decode())
-    print(length)
-    result = []
-    data = b''
-    while len(data) < length:
-        # doing it in batches is generally better than trying
-        # to do it all in one go, so I believe.
-        to_read = length - len(data)
-        data += s.recv(
-            4096 if to_read > 4096 else to_read)
-        #result = result + json.loads(data.decode())
+def sendUpletPoint(uplet, s):
 
-        # send our 0 ack
-        print(len(data))
-    assert len(b'\00') == 1
-    s.sendall(b'\00')
+    upletX,upletY = splitXY(uplet)
+    upletX = [str(i) for i in upletX]
+    upletY = [str(i) for i in upletY]
+
+    data = json.dumps(upletX).encode()
+    length = len(data)
+    print(length)
+    s.sendall(str(length).encode())
+    s.recv(1)
+    s.sendall(data)
+
+    data = json.dumps(upletY).encode()
+    s.sendall(data)
+    s.recv(1)
+
