@@ -1,15 +1,9 @@
-def receiveUplet(s):
+def sendUplet(uplet, s):
 
-    length = int(s.recv(8).decode())
-    data = b''
-    s.sendall(b'\00')
-    while len(data) < length:
-        # doing it in batches is generally better than trying
-        # to do it all in one go, so I believe.
-        to_read = length - len(data)
-        data += s.recv(
-            4096 if to_read > 4096 else to_read)
-
-    s.sendall(b'\00')
-
-    return json.loads(data.decode())
+    
+    uplet = [str(i) for i in uplet]
+    length = len(json.dumps(uplet).encode())
+    s.sendall(str(length).encode())
+    s.recv(1)
+    s.sendall(json.dumps(uplet).encode())
+    s.recv(1)
